@@ -1,0 +1,12 @@
+## Interface: 30300
+## Title: Healium
+## Notes: Адаптировано для Ascension Project человеком с профилем на гитхабе https://github.com/prosgarz35
+## Author: https://github.com/prosgarz35
+## SavedVariablesPerCharacter: Healium
+HealiumHealButton.lua
+HealiumSpells.lua
+HealiumConfigPanel.lua
+Healium.lua
+HealiumMenu.lua
+HealiumUnitFrames.lua
+HealiumUnitFrames.xml
