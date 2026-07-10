@@ -2,7 +2,7 @@
  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
  xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
  
-	
+<!-- The main frame template -->	
 	<Frame name="HealiumUnitFrameTemplate"  virtual="true" movable="true" parent="UIParent" hidden="true" enableMouse="true">
         <Size>
             <AbsDimension x="120" y="30"/>
@@ -74,7 +74,7 @@
 		</Scripts>		
 	</Frame>
 	
-	
+<!-- A template for the buff frames, currently doesn't do jack -->	
 	<Frame name="HealiumBuffTemplate" inherits="TargetBuffFrameTemplate" virtual="true" hidden="false">
 		<Scripts>
 			<OnLoad>
@@ -82,8 +82,8 @@
 		</Scripts>
 	</Frame>
 
-		
-	
+	<!-- A template for the healing buttons -->	
+	<!-- This can't have hidden="true" or it will fail to create unit frames during combat. -->
 	<Button name="HealiumHealButtonTemplate" inherits="SecureActionButtonTemplate" virtual="true" enableMouse="true">
 		<Size x="28" y ="28"/>
 		<Layers>
@@ -131,8 +131,15 @@
 
 
 	
-		
-			
+<!-- The unit frame template -->		
+<!-- WARNING
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			DO NOT SET hidden="true" here because it will cause creation of unit frames to fail during combat, and generate an 
+			"action blocked" message, and place an entry into taint.log about CreateFrame()
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+-->			
 	<Button name="HealiumUnitFrames_ButtonTemplate" virtual="true" movable="true" enableMouse="true" inherits="SecureActionButtonTemplate">
 		<Size x="120" y="28"/>
 		<Backdrop edgeFile="Interface/Tooltips/UI-Tooltip-Border" tile="true">
@@ -157,7 +164,7 @@
 						<Anchor point="BOTTOMRIGHT"/>
 					</Anchors>
 				</FontString>
-				<FontString name="$parent_HPText" parentKey="HPText" text="100%" inherits="NumberFontNormalYellow"> 
+				<FontString name="$parent_HPText" parentKey="HPText" text="100%" inherits="NumberFontNormalYellow"> <!-- inherits="NumberFontNormalYellow">  -->
 					<Color r="1.0" g="1.0" b="1.0"/>
 					<Anchors> 
 						<Anchor point="RIGHT"> 
@@ -200,8 +207,60 @@
 				   </BackgroundInsets>
 				</Backdrop>
 			</Frame>
-			
-			
+			<Frame name="$parent_Buff1" inherits="HealiumBuffTemplate">
+				<Anchors>
+					<Anchor point="RIGHT" relativePoint="LEFT">
+						<Offset>
+							<AbsDimension x="-2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors>				
+			</Frame>
+			<Frame name="$parent_Buff2" inherits="HealiumBuffTemplate">
+				<Anchors>
+					<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT" relativeTo="$parent_Buff1">
+						<Offset>
+							<AbsDimension x="-2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors>				
+			</Frame>			
+			<Frame name="$parent_Buff3" inherits="HealiumBuffTemplate">
+				<Anchors>
+					<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT" relativeTo="$parent_Buff2">
+						<Offset>
+							<AbsDimension x="-2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors>				
+			</Frame>						
+			<Frame name="$parent_Buff4" inherits="HealiumBuffTemplate">
+				<Anchors>
+					<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT" relativeTo="$parent_Buff3">
+						<Offset>
+							<AbsDimension x="-2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors>				
+			</Frame>						
+			<Frame name="$parent_Buff5" inherits="HealiumBuffTemplate">
+				<Anchors>
+					<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT" relativeTo="$parent_Buff4">
+						<Offset>
+							<AbsDimension x="-2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors>				
+			</Frame>				
+			<Frame name="$parent_Buff6" inherits="HealiumBuffTemplate">
+				<Anchors>
+					<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT" relativeTo="$parent_Buff5">
+						<Offset>
+							<AbsDimension x="-2" y="0"/>
+						</Offset>
+					</Anchor>
+				</Anchors>				
+			</Frame>				
 			<StatusBar parentKey="HealthBar" minValue="0" maxValue="100" defaultValue="100" frameStrata="LOW">
 				<Size x="111" y="23"/>
 				<Anchors>
@@ -217,7 +276,6 @@
 					<OnLoad function="Healium_HealthStatusBar_OnLoad" />
 				</Scripts>
 			</StatusBar>
-
 			<StatusBar parentKey="ManaBar" minValue="0" maxValue="100" defaultValue="100" frameStrata="LOW">
 				<Size x="5" y="23"/>
 				<Layers>
@@ -234,22 +292,24 @@
 						</Offset>
 					</Anchor>
 				</Anchors>				
+				
 				<BarTexture file="Interface\TargetingFrame\UI-StatusBar" />
 				<BarColor r="0.0" g="0.0" b="1.0"/>
 				<Scripts >
 					<OnLoad function="Healium_ManaStatusBar_OnLoad" />
 				</Scripts>
-			</StatusBar>
+			</StatusBar>			
+			
 
 		</Frames>
 		<Scripts>
 			<OnLoad>HealiumUnitFrames_Button_OnLoad(self)</OnLoad>
 			<OnShow>HealiumUnitFrames_Button_OnShow(self)</OnShow>
 			<OnHide>HealiumUnitFrames_Button_OnHide(self)</OnHide>
+			<OnAttributeChanged>HealiumUnitFrames_Button_OnAttributeChanged(self, name, value)</OnAttributeChanged>
 			<OnMouseDown>HealiumUnitFrames_Button_OnMouseDown(self, button)</OnMouseDown>
 			<OnMouseUp>HealiumUnitFrames_Button_OnMouseUp(self, button)</OnMouseUp>
 		</Scripts>
 	</Button>
 
 </Ui>
-
