@@ -7,6 +7,16 @@
 Healium_Debug = false
 local AddonVersion = "|cFFFFFF00 1.0.2|r"
 
+-- fast locals for hot paths
+local GetSpellCooldown = GetSpellCooldown
+local GetSpellTexture  = GetSpellTexture
+local GetSpellBookItemName = GetSpellBookItemName
+local IsUsableSpell    = IsUsableSpell
+local SpellHasRange    = SpellHasRange
+local IsSpellInRange   = IsSpellInRange
+local GetSpellInfo     = GetSpellInfo
+local BOOKTYPE_SPELL   = BOOKTYPE_SPELL
+
 -- Constants
 local LowHP = 0.6
 local VeryLowHP = 0.3
@@ -572,15 +582,6 @@ local function CopyFlatTable(src)
 	return dest
 end
 
-local function CreateDefaultProfile()
-	return {
-		ButtonCount    = DefaultButtonCount,
-		SpellNames     = {},
-		SpellIcons     = {},
-		SpellNamesHash = {},
-	}
-end
-
 -- Sets persisted variables to their default if they do not exist.
 local function InitVariables()
 	local function setDefault(tbl, key, default)
@@ -775,14 +776,15 @@ end
 
 function EventHandlers.RAID_TARGET_UPDATE(self, ...)
 	for _, k in ipairs(Healium_Frames) do
-		if (k.TargetUnit) then
-			if not UnitExists(k.TargetUnit) then return end
-			local index = GetRaidTargetIndex(k.TargetUnit);
-			if ( index ) then
-				SetRaidTargetIconTexture(k.raidTargetIcon, index);
-				k.raidTargetIcon:Show();
-			else
-				k.raidTargetIcon:Hide();
+		if k.TargetUnit then
+			if UnitExists(k.TargetUnit) then
+				local index = GetRaidTargetIndex(k.TargetUnit)
+				if index then
+					SetRaidTargetIconTexture(k.raidTargetIcon, index)
+					k.raidTargetIcon:Show()
+				else
+					k.raidTargetIcon:Hide()
+				end
 			end
 		end
 	end	
