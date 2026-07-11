@@ -119,9 +119,19 @@ local _profileCache = {}
 function Healium_GetProfile()
 	local key = GetActiveTalentGroup()
 	if not _profileCache[key] then
-		_profileCache[key] = Healium.Profiles and Healium.Profiles[key]
-		if not _profileCache[key] then
-			Healium_Warn("GetProfile: no profile for talent group " .. tostring(key))
+		local saved = Healium.Profiles and Healium.Profiles[key]
+		if saved then
+			_profileCache[key] = saved
+		else
+			-- Profiles not yet initialised (e.g. called before ADDON_LOADED).
+			-- Return a safe default so callers never index nil.
+			_profileCache[key] = {
+				ButtonCount    = DefaultButtonCount,
+				SpellNames     = {},
+				SpellIcons     = {},
+				SpellNamesHash = {},
+			}
+			Healium_DebugPrint("GetProfile: no saved profile for talent group " .. tostring(key) .. ", using default")
 		end
 	end
 	return _profileCache[key]
