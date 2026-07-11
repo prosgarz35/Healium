@@ -112,8 +112,13 @@ function Healium_Warn(msg)
 	DEFAULT_CHAT_FRAME:AddMessage("|CFFFF0000Warning|r: " .. tostring(msg))		
 end
 
+local _cachedProfile = nil
+
 function Healium_GetProfile()
-	return Healium.Profiles[GetActiveTalentGroup()] -- this has been debugged and works fine
+	if not _cachedProfile then
+		_cachedProfile = Healium.Profiles[GetActiveTalentGroup()]
+	end
+	return _cachedProfile
 end
 
 function Healium_OnLoad(self)
@@ -341,18 +346,13 @@ end
 
 -- Efficient cooldowns
 function Healium_UpdateButtonCooldownsByColumn(column)
-
 	if Healium_ButtonIDs[column] then
 		local start, duration, enable = GetSpellCooldown(Healium_ButtonIDs[column], BOOKTYPE_SPELL)
 		
-		for _,j in pairs(Healium_Units) do
-			for y,_ in pairs(j) do
-				local button = y.buttons[column]
-				if button then 
-					if button:IsShown() then 
-						CooldownFrame_SetTimer(button.cooldown, start, duration, enable)
-					end
-				end
+		for frame, _ in pairs(Healium_ShownFrames) do
+			local button = frame.buttons[column]
+			if button and button:IsShown() then 
+				CooldownFrame_SetTimer(button.cooldown, start, duration, enable)
 			end
 		end
 	end
@@ -361,7 +361,7 @@ end
 local function Healium_UpdateButtonCooldowns()
 	local count = Healium_GetProfile().ButtonCount
 	
-	for i=1, count, 1 do
+	for i = 1, count do
 		Healium_UpdateButtonCooldownsByColumn(i)
 	end
 end
@@ -384,16 +384,15 @@ function Healium_UpdateButtonIcons()
 	end
 
 	local Profile = Healium_GetProfile()
-	for i=1, Healium_MaxButtons, 1 do
+	for i = 1, Healium_MaxButtons do
 		local texture = Profile.SpellIcons[i]
-		
 		for _, k in ipairs(Healium_Frames) do
 			local button = k.buttons[i]
-			if button then 
+			if button then
 				Healium_UpdateButtonIcon(button, texture)
 			end
 		end
-   end
+	end
 end
 
 function Healium_UpdateButtonSpell(button, spell, id, checkforCombat)
@@ -420,7 +419,7 @@ function Healium_UpdateButtonSpells()
 
 	Profile.SpellNamesHash = {}
 
-	for i=1, Healium_MaxButtons, 1 do
+	for i = 1, Healium_MaxButtons do
 		local spell = Profile.SpellNames[i]
 		local id
 
@@ -455,19 +454,18 @@ local function UpdateButtonVisibility(frame)
 	end
 
 	-- Hide all buttons
-	for i=1, Healium_MaxButtons, 1 do 
+	for i = 1, Healium_MaxButtons do
 		local button = frame.buttons[i]
-		if button then 
+		if button then
 			button:Hide()
 		end
 	end
 
-	-- Show buttons.  The buttons will not actually show up unless their nameplate are visible so it's fine to show them like this.	
+	-- Show buttons. They will not actually show up unless their nameplate is visible.
 	local count = Healium_GetProfile().ButtonCount
-	
-	for i=1, count, 1 do 
-		local button = frame.buttons[i]	
-		if button then 
+	for i = 1, count do
+		local button = frame.buttons[i]
+		if button then
 			button:Show()
 		end
 	end
@@ -672,77 +670,67 @@ local function InitVariables()
 	HealiumDropDownButtonIcon = nil
 end
 
-function Healium_OnEvent(self, event, ...)
-	local arg1, arg2 = ...
+local EventHandlers = {}
 
-	-------------------------------------------------------------
-	-- [[ Update Unit Health Display Whenever Their HP Changes ]]
-	-------------------------------------------------------------
-    if (event == "UNIT_HEALTH" ) then
---		if (not HealiumActive) then return 0 end
-		
-		if Healium_Units[arg1] then
-			for v,_  in pairs(Healium_Units[arg1]) do
-				Healium_UpdateUnitHealth(arg1, v)
-			end
+function EventHandlers.UNIT_HEALTH(self, arg1, ...)
+	if Healium_Units[arg1] then
+		for v,_ in pairs(Healium_Units[arg1]) do
+			Healium_UpdateUnitHealth(arg1, v)
 		end
-		return
 	end
+end
 
-    if (event == "UNIT_MANA" ) then
-		if Healium_Units[arg1] then
-			for v,_  in pairs(Healium_Units[arg1]) do
-				Healium_UpdateUnitMana(arg1, v)
-			end
+function EventHandlers.UNIT_MANA(self, arg1, ...)
+	if Healium_Units[arg1] then
+		for v,_ in pairs(Healium_Units[arg1]) do
+			Healium_UpdateUnitMana(arg1, v)
 		end
-		return
+	end
+end
+
+function EventHandlers.UNIT_AURA(self, arg1, ...)
+	if Healium_Units[arg1] then
+		for v,_ in pairs(Healium_Units[arg1]) do
+			Healium_UpdateUnitBuffs(arg1, v)
+		end
+	end
+end
+
+function EventHandlers.SPELL_UPDATE_COOLDOWN(self, ...)
+	if Healium.EnableCooldowns then
+		Healium_UpdateButtonCooldowns()
+	end
+end
+
+function EventHandlers.PLAYER_REGEN_ENABLED(self, ...)
+	if self.pendingTalentUpdate then
+		_cachedProfile = nil
+		Healium_UpdateSpells()
+		Healium_UpdateButtons()
+		Healium_Update_ConfigPanel()
+		self.pendingTalentUpdate = nil
 	end
 	
-	if (event == "UNIT_AURA") then
-		if Healium_Units[arg1] then
-			for v,_  in pairs(Healium_Units[arg1]) do
-				Healium_UpdateUnitBuffs(arg1, v)
-			end
+	for _,v in ipairs(Healium_FixNameplates) do
+		if (not Healium.ShowPercentage) then v.HPText:Hide() end		
+
+		if v.fixCreateButtons then 
+			Healium_CreateButtonsForNameplate(v)
+			UpdateButtonVisibility(v)
+			v.fixCreateButtons = nil
 		end
-		return
+		
+		if v.fixShowMana then
+			Healium_UpdateManaBarVisibility(v)
+			v.fixShowMana = nil
+		end
 	end
+	
+	Healium_FixNameplates = {}
+end
 
-	if event == "SPELL_UPDATE_COOLDOWN" and Healium.EnableCooldowns then
-		Healium_UpdateButtonCooldowns()
-		return
-	end	
-		
-	if event == "PLAYER_REGEN_ENABLED" then
-		if self.pendingTalentUpdate then
-			Healium_UpdateSpells()
-			Healium_UpdateButtons()
-			Healium_Update_ConfigPanel()
-			self.pendingTalentUpdate = nil
-		end
-		
-		for _,v in ipairs(Healium_FixNameplates) do
-			if (not Healium.ShowPercentage) then v.HPText:Hide() end		
-
-			if v.fixCreateButtons then 
-				Healium_CreateButtonsForNameplate(v)
-				UpdateButtonVisibility(v)
-				v.fixCreateButtons = nil
-			end
-			
-			if v.fixShowMana then
-				Healium_UpdateManaBarVisibility(v)
-				v.fixShowMana = nil
-			end
-		end
-		
-		Healium_FixNameplates = {}
-		return
-	end
-
-	-- Use this ADDON_LOADED event instead of VARIABLES_LOADED.
-	-- ADDON_LOADED will not be called until the variables are loaded.
-	-- VARIABLES_LOADED's order can no longer be relied upon. (it kind of seems random to me)
-	if ((event == "ADDON_LOADED") and (string.lower(arg1) == string.lower(Healium_AddonName))) then
+function EventHandlers.ADDON_LOADED(self, arg1, ...)
+	if string.lower(arg1) == string.lower(Healium_AddonName) then
 		Healium_DebugPrint("ADDON_LOADED")  	
 
 		InitVariables()
@@ -757,93 +745,87 @@ function Healium_OnEvent(self, event, ...)
 		Healium_UpdateShowMana()
 		Healium_UpdateShowBuffs()
 		
-		for i=1, 8, 1 do
+		for i = 1, 8 do
 			Healium_ShowHideGroupFrame(i)
 		end
 		
 		Healium_UpdateButtons()		
-		
-		return
 	end
-	
-	if ((event == "UNIT_SPELLCAST_SENT") and ( (arg2 == ActivatePrimarySpecSpellName) or (arg2 == ActivateSecondarySpecSpellName))  ) then
---		DEFAULT_CHAT_FRAME:AddMessage("Healium Debug: Respecing Start")
-		self.Respecing = true
-		return
-	end
+end
 
-	if ( ((event == "UNIT_SPELLCAST_INTERRUPTED") or (event == "UNIT_SPELLCAST_SUCCEEDED")) and (arg1 == "player") and ( (arg2 == ActivatePrimarySpecSpellName) or (arg2 == ActivateSecondarySpecSpellName))  ) then
---		DEFAULT_CHAT_FRAME:AddMessage("Healium Debug: Respecing Interrupt or succeeded")
+function EventHandlers.UNIT_SPELLCAST_SENT(self, arg1, arg2, ...)
+	if (arg2 == ActivatePrimarySpecSpellName) or (arg2 == ActivateSecondarySpecSpellName) then
+		self.Respecing = true
+	end
+end
+
+function EventHandlers.UNIT_SPELLCAST_INTERRUPTED(self, arg1, arg2, ...)
+	if (arg1 == "player") and ( (arg2 == ActivatePrimarySpecSpellName) or (arg2 == ActivateSecondarySpecSpellName) ) then
 		self.Respecing = nil
 	end
-	
-	-- This is not sent during initialization during a reload
-	if (event == "PLAYER_TALENT_UPDATE") then
-		Healium_DebugPrint("PLAYER_TALENT_UPDATE")
-		self.Respecing = nil	
+end
 
-		if InCombatLockdown() then
-			self.pendingTalentUpdate = true
-			Healium_Warn("Spec change detected in combat. Buttons will update after combat ends.")
-		else
-			Healium_UpdateSpells()
-			Healium_UpdateButtons()
-			Healium_Update_ConfigPanel()
-		end
-		return
+function EventHandlers.UNIT_SPELLCAST_SUCCEEDED(self, arg1, arg2, ...)
+	if (arg1 == "player") and ( (arg2 == ActivatePrimarySpecSpellName) or (arg2 == ActivateSecondarySpecSpellName) ) then
+		self.Respecing = nil
 	end
-	
+end
 
-	if ((event == "SPELLS_CHANGED") and (not self.Respecing)) then
+function EventHandlers.PLAYER_TALENT_UPDATE(self, ...)
+	Healium_DebugPrint("PLAYER_TALENT_UPDATE")
+	self.Respecing = nil
+	_cachedProfile = nil  -- invalidate profile cache on spec change
+
+	if InCombatLockdown() then
+		self.pendingTalentUpdate = true
+		Healium_Warn("Spec change detected in combat. Buttons will update after combat ends.")
+	else
+		Healium_UpdateSpells()
+		Healium_UpdateButtons()
+		Healium_Update_ConfigPanel()
+	end
+end
+
+function EventHandlers.SPELLS_CHANGED(self, ...)
+	if not self.Respecing then
 		Healium_DebugPrint("SPELLS_CHANGED")
-		-- Populate the Healium_Spell Table with ID and Icon data.
 		Healium_UpdateSpells()
 	end
-	
-	if ((event == "PLAYER_ENTERING_WORLD") and (not self.Respecing)) then
+end
+
+function EventHandlers.PLAYER_ENTERING_WORLD(self, ...)
+	if not self.Respecing then
 		Healium_DebugPrint("PLAYER_ENTERING_WORLD")
-		-- Populate the Healium_Spell Table with ID and Icon data.
 		Healium_UpdateSpells()
 	end
-	
-		-- Do not use this event for anything meaningful (see comment above ADDON_LOADED for reason)
---[[	
-	if (event == "VARIABLES_LOADED") then
-		Healium_DebugPrint("VARIABLES_LOADED")
-		return
+end
+
+function EventHandlers.UNIT_DISPLAYPOWER(self, arg1, ...)
+	if Healium_Units[arg1] then
+		for v,_  in pairs(Healium_Units[arg1]) do
+			HealiumUnitFrames_CheckPowerType(arg1, v)
+		end
 	end
-	
-	if (event == "PLAYER_ALIVE") then 
-		Healium_DebugPrint("PLAYER_ALIVE")
-		return
-	end
---]]
-	
-	if event == "UNIT_DISPLAYPOWER" then
-		if Healium_Units[arg1] then
-			for v,_  in pairs(Healium_Units[arg1]) do
-				HealiumUnitFrames_CheckPowerType(arg1, v)
+end
+
+function EventHandlers.RAID_TARGET_UPDATE(self, ...)
+	for _, k in ipairs(Healium_Frames) do
+		if (k.TargetUnit) then
+			if not UnitExists(k.TargetUnit) then return end
+			local index = GetRaidTargetIndex(k.TargetUnit);
+			if ( index ) then
+				SetRaidTargetIconTexture(k.raidTargetIcon, index);
+				k.raidTargetIcon:Show();
+			else
+				k.raidTargetIcon:Hide();
 			end
 		end
+	end	
+end
 
-		return
-	end
-	
-	if event == "RAID_TARGET_UPDATE" then
-		for _, k in ipairs(Healium_Frames) do
-			if (k.TargetUnit) then
-				if not UnitExists(k.TargetUnit) then return end
-				local index = GetRaidTargetIndex(k.TargetUnit);
-				if ( index ) then
-					SetRaidTargetIconTexture(k.raidTargetIcon, index);
-					k.raidTargetIcon:Show();
-				else
-					k.raidTargetIcon:Hide();
-				end
-			end
-		end	
-		
-		return		
+function Healium_OnEvent(self, event, ...)
+	if EventHandlers[event] then
+		EventHandlers[event](self, ...)
 	end
 end
 

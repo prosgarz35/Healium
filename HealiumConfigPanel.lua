@@ -334,109 +334,25 @@ function Healium_CreateConfigPanel(Class, Version)
 		Healium_ShowHidePartyFrame()
     end)
 
-	-- Show Group 1 Check
-    Healium_ShowGroup1Check = CreateFrame("CheckButton","$parentShowGroup1CheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    Healium_ShowGroup1Check:SetPoint("TOPLEFT",Healium_ShowPartyCheck, "BOTTOMLEFT", 0, 0)
-	Healium_ShowGroup1Check.tooltipText = "Shows the Group 1 " .. Healium_AddonColoredName .. " frame."		
-    Healium_ShowGroup1Check.Text = Healium_ShowGroup1Check:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-    Healium_ShowGroup1Check.Text:SetPoint("LEFT", Healium_ShowGroup1Check, "RIGHT", 0)
-    Healium_ShowGroup1Check.Text:SetText("Group 1")
-    
-    Healium_ShowGroup1Check:SetScript("OnClick",function()
-        Healium.ShowGroupFrames[1] = Healium_ShowGroup1Check:GetChecked() or false
-		Healium_ShowHideGroupFrame(1)		
-    end)	
-	
-	-- Show Group 2 Check
-    Healium_ShowGroup2Check = CreateFrame("CheckButton","$parentShowGroup2CheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    Healium_ShowGroup2Check:SetPoint("TOPLEFT",Healium_ShowGroup1Check, "BOTTOMLEFT", 0, 0)
-	Healium_ShowGroup2Check.tooltipText = "Shows the Group 2 " .. Healium_AddonColoredName .. " frame."			
-    Healium_ShowGroup2Check.Text = Healium_ShowGroup2Check:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-    Healium_ShowGroup2Check.Text:SetPoint("LEFT", Healium_ShowGroup2Check, "RIGHT", 0)
-    Healium_ShowGroup2Check.Text:SetText("Group 2")
-    
-    Healium_ShowGroup2Check:SetScript("OnClick",function()
-        Healium.ShowGroupFrames[2] = Healium_ShowGroup2Check:GetChecked() or false
-		Healium_ShowHideGroupFrame(2)
-    end)		
-	
-	-- Show Group 3 Check
-    Healium_ShowGroup3Check = CreateFrame("CheckButton","$parentShowGroup3CheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    Healium_ShowGroup3Check:SetPoint("TOPLEFT",Healium_ShowGroup2Check, "BOTTOMLEFT", 0, 0)
-	Healium_ShowGroup3Check.tooltipText = "Shows the Group 3 " .. Healium_AddonColoredName .. " frame."			
-    Healium_ShowGroup3Check.Text = Healium_ShowGroup3Check:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-    Healium_ShowGroup3Check.Text:SetPoint("LEFT", Healium_ShowGroup3Check, "RIGHT", 0)
-    Healium_ShowGroup3Check.Text:SetText("Group 3")
-    
-    Healium_ShowGroup3Check:SetScript("OnClick",function()
-        Healium.ShowGroupFrames[3] = Healium_ShowGroup3Check:GetChecked() or false
-		Healium_ShowHideGroupFrame(3)		
-    end)		
-
-	-- Show Group 4 Check
-    Healium_ShowGroup4Check = CreateFrame("CheckButton","$parentShowGroup4CheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    Healium_ShowGroup4Check:SetPoint("TOPLEFT",Healium_ShowGroup3Check, "BOTTOMLEFT", 0, 0)
-	Healium_ShowGroup4Check.tooltipText = "Shows the Group 4 " .. Healium_AddonColoredName .. " frame."			
-    Healium_ShowGroup4Check.Text = Healium_ShowGroup4Check:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-    Healium_ShowGroup4Check.Text:SetPoint("LEFT", Healium_ShowGroup4Check, "RIGHT", 0)
-    Healium_ShowGroup4Check.Text:SetText("Group 4")
-    
-    Healium_ShowGroup4Check:SetScript("OnClick",function()
-        Healium.ShowGroupFrames[4]= Healium_ShowGroup4Check:GetChecked() or false
-		Healium_ShowHideGroupFrame(4)		
-    end)			
-	
-	-- Show Group 5 Check
-    Healium_ShowGroup5Check = CreateFrame("CheckButton","$parentShowGroup5CheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    Healium_ShowGroup5Check:SetPoint("TOPLEFT",Healium_ShowGroup4Check, "BOTTOMLEFT", 0, 0)
-	Healium_ShowGroup5Check.tooltipText = "Shows the Group 5 " .. Healium_AddonColoredName .. " frame."			
-    Healium_ShowGroup5Check.Text = Healium_ShowGroup5Check:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-    Healium_ShowGroup5Check.Text:SetPoint("LEFT", Healium_ShowGroup5Check, "RIGHT", 0)
-    Healium_ShowGroup5Check.Text:SetText("Group 5")
-    
-    Healium_ShowGroup5Check:SetScript("OnClick",function()
-        Healium.ShowGroupFrames[5] = Healium_ShowGroup5Check:GetChecked() or false
-		Healium_ShowHideGroupFrame(5)
-    end)		
-
-	-- Show Group 6 Check
-    Healium_ShowGroup6Check = CreateFrame("CheckButton","$parentShowGroup6CheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    Healium_ShowGroup6Check:SetPoint("TOPLEFT",Healium_ShowGroup5Check, "BOTTOMLEFT", 0, 0)
-	Healium_ShowGroup6Check.tooltipText = "Shows the Group 6 " .. Healium_AddonColoredName .. " frame."			
-    Healium_ShowGroup6Check.Text = Healium_ShowGroup6Check:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-    Healium_ShowGroup6Check.Text:SetPoint("LEFT", Healium_ShowGroup6Check, "RIGHT", 0)
-    Healium_ShowGroup6Check.Text:SetText("Group 6")
-    
-    Healium_ShowGroup6Check:SetScript("OnClick",function()
-        Healium.ShowGroupFrames[6] = Healium_ShowGroup6Check:GetChecked() or false
-		Healium_ShowHideGroupFrame(6)
-    end)	
-	
-	-- Show Group 7 Check
-    Healium_ShowGroup7Check = CreateFrame("CheckButton","$parentShowGroup7CheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    Healium_ShowGroup7Check:SetPoint("TOPLEFT",Healium_ShowGroup6Check, "BOTTOMLEFT", 0, 0)
-	Healium_ShowGroup7Check.tooltipText = "Shows the Group 7 " .. Healium_AddonColoredName .. " frame."			
-    Healium_ShowGroup7Check.Text = Healium_ShowGroup7Check:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-    Healium_ShowGroup7Check.Text:SetPoint("LEFT", Healium_ShowGroup7Check, "RIGHT", 0)
-    Healium_ShowGroup7Check.Text:SetText("Group 7")
-    
-    Healium_ShowGroup7Check:SetScript("OnClick",function()
-        Healium.ShowGroupFrames[7] = Healium_ShowGroup7Check:GetChecked() or false
-		Healium_ShowHideGroupFrame(7)		
-    end)	
-	
-	-- Show Group 8 Check
-    Healium_ShowGroup8Check = CreateFrame("CheckButton","$parentShowGroup8CheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    Healium_ShowGroup8Check:SetPoint("TOPLEFT",Healium_ShowGroup7Check, "BOTTOMLEFT", 0, 0)
-	Healium_ShowGroup8Check.tooltipText = "Shows the Group 8 " .. Healium_AddonColoredName .. " frame."			
-    Healium_ShowGroup8Check.Text = Healium_ShowGroup8Check:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-    Healium_ShowGroup8Check.Text:SetPoint("LEFT", Healium_ShowGroup8Check, "RIGHT", 0)
-    Healium_ShowGroup8Check.Text:SetText("Group 8")
-    
-    Healium_ShowGroup8Check:SetScript("OnClick",function()
-        Healium.ShowGroupFrames[8] = Healium_ShowGroup8Check:GetChecked() or false
-		Healium_ShowHideGroupFrame(8)
-    end)		
+	local prevCheck = Healium_ShowPartyCheck
+	for i = 1, 8 do
+		local checkName = "Healium_ShowGroup" .. i .. "Check"
+		local check = CreateFrame("CheckButton", "$parentShowGroup"..i.."CheckButton", scrollchild, "OptionsCheckButtonTemplate")
+		check:SetPoint("TOPLEFT", prevCheck, "BOTTOMLEFT", 0, 0)
+		check.tooltipText = "Shows the Group " .. i .. " " .. Healium_AddonColoredName .. " frame."
+		
+		check.Text = check:CreateFontString(nil, "BACKGROUND", "GameFontNormal")
+		check.Text:SetPoint("LEFT", check, "RIGHT", 0)
+		check.Text:SetText("Group " .. i)
+		
+		check:SetScript("OnClick", function(self)
+			Healium.ShowGroupFrames[i] = self:GetChecked() or false
+			Healium_ShowHideGroupFrame(i)
+		end)
+		
+		_G[checkName] = check
+		prevCheck = check
+	end		
 	
 	-- Debuff Warnings
 	local DebuffWarningsTitleText = scrollchild:CreateFontString(nil, "OVERLAY","GameFontNormalLarge")
@@ -610,14 +526,10 @@ function Healium_CreateConfigPanel(Class, Version)
 	EnableDebufHealthbarColoringCheck:SetChecked(Healium.EnableDebufHealthbarColoring)
 	
 	Healium_ShowPartyCheck:SetChecked(Healium.ShowPartyFrame)
-	Healium_ShowGroup1Check:SetChecked(Healium.ShowGroupFrames[1])
-	Healium_ShowGroup2Check:SetChecked(Healium.ShowGroupFrames[2])
-	Healium_ShowGroup3Check:SetChecked(Healium.ShowGroupFrames[3])
-	Healium_ShowGroup4Check:SetChecked(Healium.ShowGroupFrames[4])
-	Healium_ShowGroup5Check:SetChecked(Healium.ShowGroupFrames[5])
-	Healium_ShowGroup6Check:SetChecked(Healium.ShowGroupFrames[6])
-	Healium_ShowGroup7Check:SetChecked(Healium.ShowGroupFrames[7])
-	Healium_ShowGroup8Check:SetChecked(Healium.ShowGroupFrames[8])
+	for i = 1, 8 do
+		local checkName = "Healium_ShowGroup" .. i .. "Check"
+		_G[checkName]:SetChecked(Healium.ShowGroupFrames[i])
+	end
 	
 	ScaleSlider:SetValue(Healium.Scale)
 	RangeCheckSlider:SetValue(1.0/Healium.RangeCheckPeriod)

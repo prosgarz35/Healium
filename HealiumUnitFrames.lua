@@ -32,8 +32,8 @@ local function initialConfigFunction(frame)
 	-- configure buff frames
 	frame.buffs = { }	
 
-	local framename = frame:GetName()	
-	for i=1, MaxBuffs, 1 do
+	local framename = frame:GetName()
+	for i = 1, MaxBuffs do
 		local buffFrame = _G[framename.."_Buff"..i]
 		local name = buffFrame:GetName()
 		buffFrame.icon = _G[name.."Icon"]
@@ -68,34 +68,24 @@ function Healium_CreateButtonsForNameplate(frame)
 	local x = xSpacing
 	local Profile = Healium_GetProfile()
 	
-	for i=1, Healium_MaxButtons, 1 do
+	for i = 1, Healium_MaxButtons do
 		local name = frame:GetName()
 		local button = CreateButton(name.."_Heal"..i, frame, x)
 		x = x + xSpacing + NamePlateHeight
 
-		button.index = i -- .index is used by drag operation
+		button.index = i
 		frame.buttons[i] = button
 
-		-- set spell attribute for button
 		local spell = Profile.SpellNames[i]
-		Healium_UpdateButtonSpell(button, spell, Healium_ButtonIDs[i], false)		
-		
-		-- set icon for button
-		local texture = Profile.SpellIcons[i]	
+		Healium_UpdateButtonSpell(button, spell, Healium_ButtonIDs[i], false)
+
+		local texture = Profile.SpellIcons[i]
 		Healium_UpdateButtonIcon(button, texture)
-	
-		if (i > Profile.ButtonCount) then 
+
+		if i > Profile.ButtonCount then
 			button:Hide()
-			
-			if button:IsShown() then
-				Healium_Warn("Failed to hide heal button")
-			end
 		else
 			button:Show()
-			
-			if not button:IsShown() then
-				Healium_Warn("Failed to show heal button")			
-			end
 		end
 	end	
 end
@@ -186,13 +176,13 @@ local function CreatePartyUnitFrame(FrameName, Caption)
 end
 
 function Healium_UpdateCloseButtons()
-	for _,j in pairs(UnitFrames) do
+	for _, j in ipairs(UnitFrames) do
 		UpdateCloseButton(j)
 	end
 end
 
 function Healium_UpdateHideCaptions()
-	for _,j in pairs(UnitFrames) do
+	for _, j in ipairs(UnitFrames) do
 		UpdateHideCaption(j)
 	end
 end
@@ -242,14 +232,8 @@ function HealiumUnitFrames_ShowHideFrame(self, show)
 	for i, j in ipairs(GroupFrames) do
 		if self == j then
 			Healium.ShowGroupFrames[i] = show
-			-- Update only the changed checkbox, not all 8
-			local checks = {
-				Healium_ShowGroup1Check, Healium_ShowGroup2Check,
-				Healium_ShowGroup3Check, Healium_ShowGroup4Check,
-				Healium_ShowGroup5Check, Healium_ShowGroup6Check,
-				Healium_ShowGroup7Check, Healium_ShowGroup8Check
-			}
-			if checks[i] then checks[i]:SetChecked(Healium.ShowGroupFrames[i]) end
+			local check = _G["Healium_ShowGroup" .. i .. "Check"]
+			if check then check:SetChecked(Healium.ShowGroupFrames[i]) end
 			return
 		end
 	end
@@ -261,19 +245,17 @@ end
 
 function HealiumUnitFrames_CheckPowerType(UnitName, NamePlate)
 	local _, powerType = UnitPowerType(UnitName)
-	if (Healium.ShowMana == false) or not UnitExists(UnitName) or (powerType ~= "MANA") then
---	if  UnitManaMax(UnitName) == nil then
-		NamePlate.ManaBar:SetStatusBarColor( .5, .5, .5 )
-		NamePlate.ManaBar:SetMinMaxValues(0,1)
+	if not Healium.ShowMana or not UnitExists(UnitName) or powerType ~= "MANA" then
+		NamePlate.ManaBar:SetStatusBarColor(.5, .5, .5)
+		NamePlate.ManaBar:SetMinMaxValues(0, 1)
 		NamePlate.ManaBar:SetValue(1)
 		NamePlate.showMana = nil
-		return nil
+		return
 	else
-		local powerColor = PowerBarColor[powerType];
-		NamePlate.ManaBar:SetStatusBarColor( powerColor.r, powerColor.g, powerColor.b )
-		NamePlate.showMana = true		
+		local powerColor = PowerBarColor[powerType]
+		NamePlate.ManaBar:SetStatusBarColor(powerColor.r, powerColor.g, powerColor.b)
+		NamePlate.showMana = true
 	end
-
 	return true
 end
 
@@ -286,7 +268,7 @@ function HealiumUnitFrames_Button_OnShow(self)
 		self.TargetUnit = unit 
 
 		local buttonCount = Healium_GetProfile().ButtonCount
-		for i=1, buttonCount, 1 do		
+		for i = 1, buttonCount do		
 			local button = self.buttons[i]
 			if button then
 				-- update cooldowns
@@ -314,7 +296,7 @@ function HealiumUnitFrames_Button_OnShow(self)
 		
 		Healium_Units[unit][self] = true
 
-		for i =1, MaxBuffs, 1 do
+		for i = 1, MaxBuffs do
 			self.buffs[i].unit = unit
 		end
 		
@@ -464,13 +446,13 @@ function Healium_Show10ManRaidFrames()
 end
 
 function Healium_Show25ManRaidFrames()
-	for i=1, 5, 1 do
+	for i = 1, 5 do
 		GroupFrames[i]:Show()
 	end
 end
 
 function Healium_Show40ManRaidFrames()
-	for i=1, 8, 1 do
+	for i = 1, 8 do
 		GroupFrames[i]:Show()
 	end
 end
@@ -484,9 +466,9 @@ function Healium_CreateUnitFrames()
 	
 	-- Disabled Pets, Me, Friends, and Tanks frame creation
 	
-	for i=1, 8, 1 do
+	for i = 1, 8 do
 		GroupFrames[i] = CreateGroupUnitFrame("HealiumGroup" .. i .. "Frame", "Group " .. i, tostring(i))
-		GroupFramesWasShown[i]  = false
+		GroupFramesWasShown[i] = false
 	end	
 	
 end
@@ -539,7 +521,7 @@ function Healium_UpdateUnitBuffs(unit, frame)
 	end
 
 	-- Скрываем оставшиеся фреймы
-	for i = buffIndex, MaxBuffs, 1 do
+	for i = buffIndex, MaxBuffs do
 		frame.buffs[i]:Hide()
 	end
 	
@@ -588,14 +570,14 @@ function Healium_UpdateUnitBuffs(unit, frame)
 end
 
 function Healium_UpdateEnableDebuffs()
-	for _, j in pairs(UnitFrames) do
+	for _, j in ipairs(Healium_Frames) do
 		if j.hasDebuf then
 			j.CurseBar:SetAlpha(0)
 			j.hasDebuf = nil
 
-			for i=1, Healium_MaxButtons, 1 do
+			for i = 1, Healium_MaxButtons do
 				local button = j.buttons[i]
-				if button and button.CurseBar then  -- nil guard
+				if button and button.CurseBar then
 					button.CurseBar:SetAlpha(0)
 					button.CurseBar.hasDebuf = nil
 				end
@@ -621,10 +603,10 @@ end
 
 
 function Healium_ResetAllFramePositions()
-	for _,k in ipairs(UnitFrames) do
+	for _, k in ipairs(UnitFrames) do
 		k:SetUserPlaced(false)
 		k:ClearAllPoints()
-		k:SetPoint("CENTER", UIParent, 0,0)
+		k:SetPoint("CENTER", UIParent, 0, 0)
 	end
 	Healium_Print("Reset frame positions complete.")
 end
