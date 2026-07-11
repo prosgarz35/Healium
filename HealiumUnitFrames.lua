@@ -488,7 +488,7 @@ function Healium_UpdateUnitBuffs(unit, frame)
 	local buffIndex = 1
 	local Profile = Healium_GetProfile()
 	
-	if Healium.ShowBuffs and Profile.SpellNamesHash then
+	if Profile.SpellNamesHash then
 		-- WotLK max player buffs = 32; bounded loop prevents hang on broken API
 		for i = 1, 32 do
 			-- Фильтр "PLAYER" для игнорирования чужих аур в рейде

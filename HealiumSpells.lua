@@ -18,11 +18,9 @@ end
 
 local function Count(tab)
 	local cnt = 0
-	
-	for _, k in pairs(tab) do
+	for _ in pairs(tab) do
 		cnt = cnt + 1
 	end
-	
 	return cnt
 end
 
@@ -109,14 +107,10 @@ end
 
 --debuffType is expected to be a return value from the wow api UnitDebuff()
 function Healium_CanCureDebuff(debuffType)
-	if   ( (debuffType == "Curse") and CanCureCurse) or
-	     ( (debuffType == "Disease") and CanCureDisease) or
-		 ( (debuffType == "Magic") and CanCureMagic) or
-		 ( (debuffType == "Poison") and CanCurePoison) then	
-		 return true
-	end
-	
-	return false
+	return (debuffType == "Curse" and CanCureCurse) or
+	       (debuffType == "Disease" and CanCureDisease) or
+	       (debuffType == "Magic" and CanCureMagic) or
+	       (debuffType == "Poison" and CanCurePoison)
 end
 
 function Healium_ShowDebuffButtons(Profile, frame, debuffTypes)

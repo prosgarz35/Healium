@@ -24,9 +24,7 @@ local NamePlateWidth = 120
 local _, HealiumClass = UnitClass("player")
 local _, HealiumRace = UnitRace("player")
 local MaxParty = 5 -- Max number of people in party
-local MinRangeCheckPeriod = .2 -- .2 = 5Hz
-local MaxRangeCheckPeriod = 2  -- 2 = .5Hz
-local DefaultRangeCheckPeriod = 0.3
+
 local DefaultButtonCount = 5
 
 -- locale safe versions of respeccing spell names
@@ -36,16 +34,12 @@ local ActivateSecondarySpecSpellName = GetSpellInfo(63644)
 -- Healium holds per character settings
 Healium = {
   Scale = 1.0,									-- Scale of frames
-  DoRangeChecks = true,							-- Whether or not to do range checks on buttons 
-  RangeCheckPeriod = .5,						-- Time period between range checks  
-  EnableCooldowns = true,						-- Whether or not to do cooldown animations on buttons
   ShowToolTips = true,							-- Whether or not to display a tooltip for the spell when hovering over buttons
   ShowPercentage = true,						-- Whether or not to display the health percentage
   UseClassColors = false,						-- Whether or not to color the healthbar the color of the class instead of green/yellow/red
   ShowDefaultPartyFrames = false,				-- Whether or not to show the default party frames
   ShowPartyFrame = true,						-- Whether or not to show the party frame
   ShowGroupFrames = { },  						-- Whether or not to show individual group frame
-  ShowBuffs = true,								-- Whether or not to show your own buffs, that are configured in Healium to the left of the healthbar
   HideCloseButton = false,						-- Whether or not to hide the close (X) button, to prevent accidental closing of the Healium Frame
   HideCaptions = false,							-- Whether or not to hide the caption when the mouse leaves the caption area
   LockFrames = false,							-- Whether or not to prevent dragging of the frame
@@ -206,38 +200,25 @@ function Healium_UpdateClassColors()
 				k.HealthBar:SetStatusBarColor(color.r, color.g, color.b)
 			else
 				local Health = UnitHealth(k.TargetUnit)
-				local MaxHealth = UnitHealthMax(k.TargetUnit)
-				if MaxHealth == 0 then MaxHealth = 1 end
-				local HPPercent = Health / MaxHealth
-				UpdateHealthBar(HPPercent, k)
+				local MaxHealth = math.max(1, UnitHealthMax(k.TargetUnit))
+				UpdateHealthBar(Health / MaxHealth, k)
 			end
 		end
 	end
 end
 
 function Healium_UpdateUnitHealth(UnitName, NamePlate)
-	if not NamePlate then return end
-	if not UnitExists(UnitName) then return end
+	if not NamePlate or not UnitExists(UnitName) then return end
 		
 	local Health = UnitHealth(UnitName)
-	local MaxHealth = UnitHealthMax(UnitName)
-	if MaxHealth == 0 then MaxHealth = 1 end
-	local isDead 
+	local MaxHealth = math.max(1, UnitHealthMax(UnitName))
+	local isDead = UnitIsDeadOrGhost(UnitName)
 		
-	if UnitIsDeadOrGhost(UnitName) then
+	if isDead then
 		Health = 0
-		isDead = 1
 	end
 	
-	local HPPercent =  Health / MaxHealth
-	
-	if HPPercent > 1 then 
-		HPPercent = 1
-	end
-	
-	if HPPercent < 0 then
-		HPPercent = 0
-	end
+	local HPPercent = math.max(0, math.min(1, Health / MaxHealth))
 	
 	if isDead then
 		NamePlate.HPText:SetText("dead")	
@@ -260,18 +241,10 @@ function Healium_UpdateUnitHealth(UnitName, NamePlate)
 end
 
 function Healium_UpdateUnitMana(UnitName, NamePlate)
-	if not NamePlate then return end
-	if not UnitExists(UnitName) then return end
+	if not NamePlate or not UnitExists(UnitName) or not NamePlate.showMana then return end
 	
-	if NamePlate.showMana == nil then return end
-	
-	local Mana = UnitPower(UnitName, SPELL_POWER_MANA)
-	local MaxMana = UnitPowerMax(UnitName, SPELL_POWER_MANA)
-	if MaxMana == 0 then MaxMana = 1 end
-
-	if UnitIsDeadOrGhost(UnitName) then
-		Mana = 0
-	end
+	local MaxMana = math.max(1, UnitPowerMax(UnitName, SPELL_POWER_MANA))
+	local Mana = UnitIsDeadOrGhost(UnitName) and 0 or UnitPower(UnitName, SPELL_POWER_MANA)
 
 	NamePlate.ManaBar:SetMinMaxValues(0,MaxMana)
 	NamePlate.ManaBar:SetValue(Mana)
@@ -315,11 +288,7 @@ function Healium_UpdateManaBarVisibility(frame)
 end
 
 function Healium_UpdateShowBuffs()
-	if Healium.ShowBuffs then 
-		HealiumFrame:RegisterEvent("UNIT_AURA")
-	else
-		HealiumFrame:UnregisterEvent("UNIT_AURA")
-	end
+	HealiumFrame:RegisterEvent("UNIT_AURA")
 	
 	for _, k in pairs(Healium_ShownFrames) do
 		if (k.TargetUnit) then
@@ -594,7 +563,6 @@ local function InitVariables()
 	setDefault(H, "ShowMana",                        true)
 	setDefault(H, "ShowPercentage",                  true)
 	setDefault(H, "UseClassColors",                  false)
-	setDefault(H, "ShowBuffs",                       true)
 	setDefault(H, "ShowDefaultPartyFrames",          false)
 	setDefault(H, "ShowPartyFrame",                  true)
 	setDefault(H, "ShowGroupFrames",                 {})
@@ -606,11 +574,7 @@ local function InitVariables()
 	setDefault(H, "EnableDebufButtonHighlighting",   true)
 	setDefault(H, "EnableDebufHealthbarColoring",    false)
 
-	-- Clamp RangeCheckPeriod to valid bounds.
-	setDefault(H, "RangeCheckPeriod", DefaultRangeCheckPeriod)
-	if H.RangeCheckPeriod > MaxRangeCheckPeriod or H.RangeCheckPeriod < MinRangeCheckPeriod then
-		H.RangeCheckPeriod = DefaultRangeCheckPeriod
-	end
+
 
 	-- Migrate profiles from the old per-character SavedVariable format.
 	if H.Profiles == nil then
@@ -662,9 +626,7 @@ function EventHandlers.UNIT_AURA(self, arg1, ...)
 end
 
 function EventHandlers.SPELL_UPDATE_COOLDOWN(self, ...)
-	if Healium.EnableCooldowns then
-		Healium_UpdateButtonCooldowns()
-	end
+	Healium_UpdateButtonCooldowns()
 end
 
 function EventHandlers.PLAYER_REGEN_ENABLED(self, ...)
@@ -804,9 +766,9 @@ local RangeCheckPageIdx = 0     -- current position in snapshot
 local RangeCheckPageSize = 8    -- frames processed per tick (tune as needed)
 
 function Healium_OnUpdate(self, elapsed)
-	if not Healium or not Healium.DoRangeChecks then return end
+	if not Healium then return end
 	RangeCheckTimer = RangeCheckTimer + elapsed
-	if RangeCheckTimer < Healium.RangeCheckPeriod then return end
+	if RangeCheckTimer < 0.5 then return end
 	RangeCheckTimer = 0
 
 	local Profile = Healium_GetProfile()

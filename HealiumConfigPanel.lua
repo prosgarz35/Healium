@@ -7,9 +7,6 @@ local ClassIcon = {
         DEATHKNIGHT = "Interface/Icons/Spell_Deathknight_ClassIcon"
 }
 
-local function UpdateRangeCheckSliderText(self)
-    self.Text:SetText("Range Check Frequency: |cFFFFFFFF".. format("%.1f",self:GetValue()) .. " Hz")
-end
 
 function Healium_SetButtonCount(count)
   HealiumMaxButtonSlider.Text:SetText("Show |cFFFFFFFF"..count.. "|r Buttons")
@@ -35,18 +32,6 @@ local function ClassColorCheck_OnClick(self)
 	Healium_UpdateClassColors()
 end
 
-local function ShowBuffsCheck_OnClick(self)
-	Healium.ShowBuffs = self:GetChecked() or false
-	Healium_UpdateShowBuffs()
-end
-
-local function RangeCheckCheck_OnClick(self)
-	Healium.DoRangeChecks = self:GetChecked() or false
-end
-
-local function EnableCooldownsCheck_OnClick(self)
-	Healium.EnableCooldowns = self:GetChecked() or false
-end
 
 local function HideCloseButtonCheck_OnClick(self)
 	Healium.HideCloseButton = self:GetChecked() or false
@@ -110,10 +95,7 @@ local function ScaleSlider_OnValueChanged(self)
 	self.Text:SetText("Scale: |cFFFFFFFF".. format("%.1f",Healium.Scale))
 end
 
-local function RangeCheckSlider_OnValueChanged(self)
-	Healium.RangeCheckPeriod = 1.0 / self:GetValue()
-	UpdateRangeCheckSliderText(self)
-end
+
 
 function Healium_ShowConfigPanel()
     if (InterfaceOptionsFrame:IsVisible()) then
@@ -418,70 +400,6 @@ function Healium_CreateConfigPanel(Class, Version)
 	EnableDebuffButtonHighlightingCheck:SetScript("OnClick", EnableDebuffButtonHighlightingCheck_OnClick)	
 	EnableDebuffButtonHighlightingCheck.tooltipText = "Enables highlighting of buttons which have been assigned a spell that can cure a debuff on a player"
 
-	-- CPU Intensive Settings text
-	local UpdatingTitleText = scrollchild:CreateFontString(nil, "OVERLAY","GameFontNormalLarge")
-	UpdatingTitleText:SetJustifyH("LEFT")
-	UpdatingTitleText:SetPoint("TOPLEFT", EnableDebuffButtonHighlightingCheck, "BOTTOMLEFT", -20, -30)
-	UpdatingTitleText:SetText("CPU Intensive Settings")
-
-	local UpdatingTitleSubText = scrollchild:CreateFontString(nil, "OVERLAY","GameFontNormalSmall")
-	UpdatingTitleSubText:SetJustifyH("LEFT")
-	UpdatingTitleSubText:SetPoint("TOPLEFT", UpdatingTitleText, "BOTTOMLEFT", 0, 0)
-	UpdatingTitleSubText:SetText("Enabling these settings may cause extra lag.")
-	UpdatingTitleSubText:SetTextColor(1,1,1,1) 
-	
-    -- EnableColldowns Check Button
-    local EnableCooldownsCheck = CreateFrame("CheckButton","$parentEnableCooldownsCheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    EnableCooldownsCheck:SetPoint("TOPLEFT", UpdatingTitleSubText, "BOTTOMLEFT", 0, -10)
-    EnableCooldownsCheck.tooltipText = "Enables cooldown animations on the " .. Healium_AddonColoredName .. " buttons."
-	
-    EnableCooldownsCheck.Text = EnableCooldownsCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-    EnableCooldownsCheck.Text:SetPoint("LEFT", EnableCooldownsCheck, "RIGHT", 0)
-    EnableCooldownsCheck.Text:SetText("Enable Cooldowns")
-    EnableCooldownsCheck:SetScript("OnClick", EnableCooldownsCheck_OnClick)
-	
-
-	-- RangeCheck Check Button
-    local RangeCheckCheck = CreateFrame("CheckButton","$parentRangeCheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    RangeCheckCheck:SetPoint("TOPLEFT",EnableCooldownsCheck, "BOTTOMLEFT", 0, 0)
-    RangeCheckCheck.tooltipText = "Enables range checks on the " .. Healium_AddonColoredName .. " buttons."
-	
-    RangeCheckCheck.Text = RangeCheckCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-    RangeCheckCheck.Text:SetPoint("LEFT", RangeCheckCheck, "RIGHT", 0)
-    RangeCheckCheck.Text:SetText("Enable Range Checks")
-    RangeCheckCheck:SetScript("OnClick",RangeCheckCheck_OnClick)
-	
-	-- RangeCheck Slider
-	local RangeCheckSlider = CreateFrame("Slider","$parentRangeCheckSlider",scrollchild,"OptionsSliderTemplate")
-    RangeCheckSlider:SetWidth(180)
-    RangeCheckSlider:SetHeight(16)
-    
-    _G[RangeCheckSlider:GetName().."Low"]:SetText("Slower\n(Less CPU)")
-    _G[RangeCheckSlider:GetName().."High"]:SetText("Faster\n(More CPU)")
-    
-    RangeCheckSlider:SetMinMaxValues(.5,5.0)
-    RangeCheckSlider:SetValueStep(0.1)
-    RangeCheckSlider:SetValue(1.0/Healium.RangeCheckPeriod)
-    
-    RangeCheckSlider:SetPoint("TOPLEFT", RangeCheckCheck.Text, "TOPRIGHT", 15, 0)
-    RangeCheckSlider.tooltipText = "Controls how often to do range cheks.  The further to the right, the more often range checks are performed and the more CPU it will use."
-	
-    RangeCheckSlider.Text = RangeCheckSlider:CreateFontString(nil, "BACKGROUND","GameFontNormalSmall")
-    RangeCheckSlider.Text:SetPoint("CENTER", -5, 17)
-    UpdateRangeCheckSliderText(RangeCheckSlider)
-    
-    RangeCheckSlider:SetScript("OnValueChanged", RangeCheckSlider_OnValueChanged)
-	
-	-- ShowBuffs check
-	local ShowBuffsCheck = CreateFrame("CheckButton","$parentShowBuffsCheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    ShowBuffsCheck:SetPoint("TOPLEFT",RangeCheckCheck, "BOTTOMLEFT", 0, 0)
-    ShowBuffsCheck.tooltipText = "Shows the buffs and HOTs you have personally cast on the player to the left of the healthbar.  It will only show spells that are configured in " .. Healium_AddonColoredName .. "."
-	
-    ShowBuffsCheck.Text = ShowBuffsCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-    ShowBuffsCheck.Text:SetPoint("LEFT", ShowBuffsCheck, "RIGHT", 0)
-    ShowBuffsCheck.Text:SetText("Show Buffs")
-	ShowBuffsCheck:SetScript("OnClick", ShowBuffsCheck_OnClick);
-
     -- About Frame
     local AboutTitle = CreateFrame("Frame","",scrollchild)
     AboutTitle:SetFrameStrata("TOOLTIP")
@@ -489,7 +407,7 @@ function Healium_CreateConfigPanel(Class, Version)
     AboutTitle:SetHeight(20)
     
     AboutTitle.Text = AboutTitle:CreateFontString(nil, "BACKGROUND","GameFontNormalLarge")
-    AboutTitle.Text:SetPoint("TOPLEFT",ShowBuffsCheck, "BOTTOMLEFT", 0, -30)
+    AboutTitle.Text:SetPoint("TOPLEFT",EnableDebuffButtonHighlightingCheck, "BOTTOMLEFT", 0, -30)
     AboutTitle.Text:SetText("About " .. Healium_AddonColoredName)
     
     local AboutFrame = CreateFrame("Frame","AboutHealium",scrollchild)
@@ -514,9 +432,6 @@ function Healium_CreateConfigPanel(Class, Version)
 	ShowManaCheck:SetChecked(Healium.ShowMana)
 	PercentageCheck:SetChecked(Healium.ShowPercentage)
 	ClassColorCheck:SetChecked(Healium.UseClassColors)
-	ShowBuffsCheck:SetChecked(Healium.ShowBuffs)
-	RangeCheckCheck:SetChecked(Healium.DoRangeChecks)
-	EnableCooldownsCheck:SetChecked(Healium.EnableCooldowns)	
 	HideCloseButtonCheck:SetChecked(Healium.HideCloseButton)
 	HideCaptionsCheck:SetChecked(Healium.HideCaptions)
 	LockFramePositionsCheck:SetChecked(Healium.LockFrames)
@@ -532,7 +447,6 @@ function Healium_CreateConfigPanel(Class, Version)
 	end
 	
 	ScaleSlider:SetValue(Healium.Scale)
-	RangeCheckSlider:SetValue(1.0/Healium.RangeCheckPeriod)
 	
 	UpdateEnableDebuffsControls(EnableDebuffsCheck)
 
