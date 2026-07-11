@@ -116,6 +116,16 @@ end
 -- and no explicit invalidation is needed.
 local _profileCache = {}
 
+-- Forward-declared so Healium_GetProfile can use it before the main definition block.
+local function CreateDefaultProfile()
+	return {
+		ButtonCount    = DefaultButtonCount,
+		SpellNames     = {},
+		SpellIcons     = {},
+		SpellNamesHash = {},
+	}
+end
+
 function Healium_GetProfile()
 	local key = GetActiveTalentGroup()
 	if not _profileCache[key] then
@@ -125,12 +135,7 @@ function Healium_GetProfile()
 		else
 			-- Profiles not yet initialised (e.g. called before ADDON_LOADED).
 			-- Return a safe default so callers never index nil.
-			_profileCache[key] = {
-				ButtonCount    = DefaultButtonCount,
-				SpellNames     = {},
-				SpellIcons     = {},
-				SpellNamesHash = {},
-			}
+			_profileCache[key] = CreateDefaultProfile()
 			Healium_DebugPrint("GetProfile: no saved profile for talent group " .. tostring(key) .. ", using default")
 		end
 	end
@@ -568,126 +573,64 @@ local function CopyFlatTable(src)
 end
 
 local function CreateDefaultProfile()
-	return { 
-		ButtonCount = DefaultButtonCount,
-		SpellNames = {},
-		SpellIcons = {},
-		SpellNamesHash = {}
+	return {
+		ButtonCount    = DefaultButtonCount,
+		SpellNames     = {},
+		SpellIcons     = {},
+		SpellNamesHash = {},
 	}
 end
 
-
--- Sets persisted variables to their default, if they do not exist.
+-- Sets persisted variables to their default if they do not exist.
 local function InitVariables()
-	if (not Healium.RaidScale) then
-		Healium.RaidScale = 1.0
-	end
-	
-	if (not Healium.RangeCheckPeriod) then
-		Healium.RangeCheckPeriod = DefaultRangeCheckPeriod
-	end
-	
-	if (Healium.RangeCheckPeriod > MaxRangeCheckPeriod or Healium.RangeCheckPeriod < MinRangeCheckPeriod) then
-		Healium.RangeCheckPeriod = DefaultRangeCheckPeriod
+	local function setDefault(tbl, key, default)
+		if tbl[key] == nil then tbl[key] = default end
 	end
 
-	if Healium.ShowGroupFrames == nil then
-		Healium.ShowGroupFrames = { }
-	end
-	
-	if Healium.ShowToolTips == nil then 
-		Healium.ShowToolTips = true
-	end
-	
-	if Healium.ShowMana == nil then
-		Healium.ShowMana = true
-	end
-	
-	if Healium.ShowPercentage == nil then 
-		Healium.ShowPercentage = true
-	end
-	
-	if Healium.UseClassColors == nil then 
-		Healium.UseClassColors = false
+	local H = Healium
+	setDefault(H, "RaidScale",                       1.0)
+	setDefault(H, "ShowToolTips",                    true)
+	setDefault(H, "ShowMana",                        true)
+	setDefault(H, "ShowPercentage",                  true)
+	setDefault(H, "UseClassColors",                  false)
+	setDefault(H, "ShowBuffs",                       true)
+	setDefault(H, "ShowDefaultPartyFrames",          false)
+	setDefault(H, "ShowPartyFrame",                  true)
+	setDefault(H, "ShowGroupFrames",                 {})
+	setDefault(H, "HideCloseButton",                 false)
+	setDefault(H, "HideCaptions",                    false)
+	setDefault(H, "LockFrames",                      false)
+	setDefault(H, "EnableDebufs",                    true)
+	setDefault(H, "EnableDebufHealthbarHighlighting", true)
+	setDefault(H, "EnableDebufButtonHighlighting",   true)
+	setDefault(H, "EnableDebufHealthbarColoring",    false)
+
+	-- Clamp RangeCheckPeriod to valid bounds.
+	setDefault(H, "RangeCheckPeriod", DefaultRangeCheckPeriod)
+	if H.RangeCheckPeriod > MaxRangeCheckPeriod or H.RangeCheckPeriod < MinRangeCheckPeriod then
+		H.RangeCheckPeriod = DefaultRangeCheckPeriod
 	end
 
-	if Healium.ShowBuffs == nil then 
-		Healium.ShowBuffs = true
-	end
-
-	if Healium.ShowDefaultPartyFrames == nil then
-		Healium.ShowDefaultPartyFrames = false
-	end
-	
-	if Healium.ShowPartyFrame == nil then
-		Healium.ShowPartyFrame = true
-	end		
-	
-
-	
-	if Healium.HideCloseButton == nil then
-		Healium.HideCloseButton = false
-	end
-	
-	if Healium.HideCaptions == nil then
-		Healium.HideCaptions = false
-	end
-	
-	if Healium.LockFrames == nil then
-		Healium.LockFrames = false
-	end
-	
-	if Healium.EnableDebufs == nil then
-		Healium.EnableDebufs = true
-	end
-	
-	if Healium.EnableDebufHealthbarHighlighting == nil then
-		Healium.EnableDebufHealthbarHighlighting = true
-	end
-	
-	if Healium.EnableDebufButtonHighlighting == nil then 
-		Healium.EnableDebufButtonHighlighting = true
-	end
-	
-	if Healium.EnableDebufHealthbarColoring == nil then
-		Healium.EnableDebufHealthbarColoring = false
-	end
-	
-	if Healium.Profiles == nil then
-		if (HealiumDropDownButton ~= nil) and (HealiumDropDownButtonIcon ~= nil) and (Healium.ButtonCount ~= nil) then
+	-- Migrate profiles from the old per-character SavedVariable format.
+	if H.Profiles == nil then
+		if HealiumDropDownButton ~= nil and HealiumDropDownButtonIcon ~= nil and H.ButtonCount ~= nil then
 			Healium_Print("Importing button profiles.")
-			Healium_Print(Healium_AddonColor .. Healium_AddonName .. "|r now has seperate button configurations for each talent specialization.")			
+			Healium_Print(Healium_AddonColor .. Healium_AddonName .. "|r now has separate button configurations for each talent specialization.")
 			Healium_Print("Both " .. Healium_AddonColor .. Healium_AddonName .. "|r button configurations will be set to your current button configuration.")
-			
-			Healium.Profiles = { 
-				[1] = {
-					ButtonCount = Healium.ButtonCount,
-					SpellNames = CopyFlatTable(HealiumDropDownButton),
-					SpellIcons = CopyFlatTable(HealiumDropDownButtonIcon),
-					SpellNamesHash = {}
-				},
-				[2] = {
-					ButtonCount = Healium.ButtonCount,
-					SpellNames = CopyFlatTable(HealiumDropDownButton),
-					SpellIcons = CopyFlatTable(HealiumDropDownButtonIcon),
-					SpellNamesHash = {}
-				}
+			H.Profiles = {
+				[1] = { ButtonCount = H.ButtonCount, SpellNames = CopyFlatTable(HealiumDropDownButton), SpellIcons = CopyFlatTable(HealiumDropDownButtonIcon), SpellNamesHash = {} },
+				[2] = { ButtonCount = H.ButtonCount, SpellNames = CopyFlatTable(HealiumDropDownButton), SpellIcons = CopyFlatTable(HealiumDropDownButtonIcon), SpellNamesHash = {} },
 			}
 		else
-			Healium.Profiles = {}
+			H.Profiles = {}
 		end
 	end
 
-	if type(Healium.Profiles[1]) ~= "table" then
-		Healium.Profiles[1] = CreateDefaultProfile()
-	end
-	
-	if type(Healium.Profiles[2]) ~= "table" then
-		Healium.Profiles[2] = CreateDefaultProfile()
-	end
+	if type(H.Profiles[1]) ~= "table" then H.Profiles[1] = CreateDefaultProfile() end
+	if type(H.Profiles[2]) ~= "table" then H.Profiles[2] = CreateDefaultProfile() end
 
-	-- remove old saved variables
-	HealiumDropDownButton = nil
+	-- Remove old saved variables from pre-profile era.
+	HealiumDropDownButton    = nil
 	HealiumDropDownButtonIcon = nil
 end
 
