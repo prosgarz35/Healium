@@ -119,7 +119,10 @@ local _profileCache = {}
 function Healium_GetProfile()
 	local key = GetActiveTalentGroup()
 	if not _profileCache[key] then
-		_profileCache[key] = Healium.Profiles[key]
+		_profileCache[key] = Healium.Profiles and Healium.Profiles[key]
+		if not _profileCache[key] then
+			Healium_Warn("GetProfile: no profile for talent group " .. tostring(key))
+		end
 	end
 	return _profileCache[key]
 end
