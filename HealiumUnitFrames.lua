@@ -111,13 +111,8 @@ local function CreateHeader(TemplateName, FrameName, ParentFrame)
 end
 
 local function UpdateCloseButton(frame)
-	-- Hide close button if set to
 	if not InCombatLockdown() then
-		if Healium.HideCloseButton then
-			frame.CaptionBar.CloseButton:Hide()
-		else
-			frame.CaptionBar.CloseButton:Show()
-		end
+		frame.CaptionBar.CloseButton:SetShown(not Healium.HideCloseButton)
 	end
 end
 
@@ -214,12 +209,8 @@ end
 
 function HealiumUnitFrames_OnMouseUp(self, button)
 	if button == "LeftButton" then
-		self:StopMovingOrSizing()	
+		self:StopMovingOrSizing()
 	end
-	
-	if button == "RightButton" then
-	
-	end	
 end
 
 function HealiumUnitFrames_ShowHideFrame(self, show)
@@ -259,54 +250,45 @@ function HealiumUnitFrames_CheckPowerType(UnitName, NamePlate)
 	return true
 end
 
+-- Shared initialiser called by both OnShow and OnAttributeChanged
+local function InitUnitFrameForUnit(self, unit)
+	self.TargetUnit = unit
+	if not Healium_Units[unit] then Healium_Units[unit] = {} end
+	Healium_Units[unit][self] = true
+	local unitName = UnitName(unit)
+	self.name:SetText(unitName and strupper(unitName) or "")
+	HealiumUnitFrames_CheckPowerType(unit, self)
+	Healium_UpdateUnitHealth(unit, self)
+	Healium_UpdateUnitMana(unit, self)
+	Healium_UpdateUnitBuffs(unit, self)
+end
+
 function HealiumUnitFrames_Button_OnShow(self)
 	Healium_ShownFrames[self] = self
-	
-	local unit = self:GetAttribute("unit")
-	
-	if unit then
-		self.TargetUnit = unit 
 
-		local buttonCount = Healium_GetProfile().ButtonCount
-		for i = 1, buttonCount do		
-			local button = self.buttons[i]
-			if button then
-				-- update cooldowns
-				local id = Healium_ButtonIDs[i]
-				
-				if id then 
-					local start, duration, enable = GetSpellCooldown(id, BOOKTYPE_SPELL)
-					CooldownFrame_SetTimer(button.cooldown, start, duration, enable)			
-				end
+	local unit = self:GetAttribute("unit")
+	if not unit then return end
+
+	InitUnitFrameForUnit(self, unit)
+
+	-- Update cooldowns for all visible buttons
+	local buttonCount = Healium_GetProfile().ButtonCount
+	for i = 1, buttonCount do
+		local button = self.buttons[i]
+		if button then
+			local id = Healium_ButtonIDs[i]
+			if id then
+				local start, duration, enable = GetSpellCooldown(id, BOOKTYPE_SPELL)
+				CooldownFrame_SetTimer(button.cooldown, start, duration, enable)
 			end
 		end
-
-	
-		local name = UnitName(unit)
-		
-		if name then 
-			self.name:SetText(strupper(name))
-		else 
-			self.name:SetText("")
-		end
-		
-		if not Healium_Units[unit] then
-			Healium_Units[unit] = { }
-		end
-		
-		Healium_Units[unit][self] = true
-
-		for i = 1, MaxBuffs do
-			self.buffs[i].unit = unit
-		end
-		
-		HealiumUnitFrames_CheckPowerType(unit, self)
-		
-		Healium_UpdateUnitHealth(unit, self)
-		Healium_UpdateUnitMana(unit, self)
-		Healium_UpdateUnitBuffs(unit, self)
 	end
-end	
+
+	-- Link buff frames to unit
+	for i = 1, MaxBuffs do
+		self.buffs[i].unit = unit
+	end
+end
 
 function HealiumUnitFrames_Button_OnHide(self)
 
@@ -336,31 +318,18 @@ function HealiumUnitFrames_Button_OnMouseDown(self, button)
 end
 
 function HealiumUnitFrames_Button_OnAttributeChanged(self, name, value)
-    if name == "unit" and value ~= self.TargetUnit then
-        -- Удаляем старую привязку
-        if self.TargetUnit and Healium_Units[self.TargetUnit] then
-            Healium_Units[self.TargetUnit][self] = nil
-        end
-        
-        -- Если фрейм видим, переинициализируем его с новым юнитом
-        if self:IsShown() and value then
-            self.TargetUnit = value
-            if not Healium_Units[value] then
-                Healium_Units[value] = { }
-            end
-            Healium_Units[value][self] = true
-            
-            -- Обновляем визуал (имя, хп, мана)
-            local unitName = UnitName(value)
-            self.name:SetText(unitName and strupper(unitName) or "")
-            HealiumUnitFrames_CheckPowerType(value, self)
-            Healium_UpdateUnitHealth(value, self)
-            Healium_UpdateUnitMana(value, self)
-            Healium_UpdateUnitBuffs(value, self)
-        else
-            self.TargetUnit = nil
-        end
-    end
+	if name ~= "unit" or value == self.TargetUnit then return end
+
+	-- Remove old binding
+	if self.TargetUnit and Healium_Units[self.TargetUnit] then
+		Healium_Units[self.TargetUnit][self] = nil
+	end
+
+	if self:IsShown() and value then
+		InitUnitFrameForUnit(self, value)
+	else
+		self.TargetUnit = nil
+	end
 end
 
 function HealiumUnitFrames_Button_OnMouseUp(self, button)
@@ -376,36 +345,29 @@ function Healium_ToggleAllFrames()
 		Healium_Warn("Can't toggle frames while in combat.")
 		return
 	end
-	
-	local hide = false
 
-	if PartyFrame:IsShown() then hide = true end
-
-	for i,j in ipairs(GroupFrames) do
-		if j:IsShown() then
-			hide = true
-			break
+	local hide = PartyFrame:IsShown()
+	if not hide then
+		for _, j in ipairs(GroupFrames) do
+			if j:IsShown() then hide = true; break end
 		end
 	end
-	
+
 	if hide then
 		PartyFrameWasShown = PartyFrame:IsShown()
-	
 		PartyFrame:Hide()
-		
-		for i,j in ipairs(GroupFrames) do
+		for i, j in ipairs(GroupFrames) do
 			GroupFramesWasShown[i] = j:IsShown()
 			j:Hide()
 		end
-		
 		return
 	end
-	
+
 	if PartyFrameWasShown then
 		PartyFrame:Show()
 	end
-	
-	for i,j in ipairs(GroupFramesWasShown) do
+
+	for i, j in ipairs(GroupFramesWasShown) do
 		if j then
 			GroupFrames[i]:Show()
 		end
@@ -413,23 +375,13 @@ function Healium_ToggleAllFrames()
 end
 
 function Healium_ShowHidePartyFrame(show)
-	if (show ~= nil) then Healium.ShowPartyFrame = show end
-	
-	if Healium.ShowPartyFrame then
-		PartyFrame:Show()
-	else
-		PartyFrame:Hide()
-	end
+	if show ~= nil then Healium.ShowPartyFrame = show end
+	PartyFrame:SetShown(Healium.ShowPartyFrame)
 end
 
 function Healium_ShowHideGroupFrame(group, show)
-	if (show ~= nil) then Healium.ShowGroupFrames[group] = show end
-	
-	if Healium.ShowGroupFrames[group] then
-		GroupFrames[group]:Show()
-	else
-		GroupFrames[group]:Hide()
-	end
+	if show ~= nil then Healium.ShowGroupFrames[group] = show end
+	GroupFrames[group]:SetShown(Healium.ShowGroupFrames[group])
 end
 
 function Healium_HideAllRaidFrames()

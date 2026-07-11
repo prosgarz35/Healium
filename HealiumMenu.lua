@@ -1,13 +1,8 @@
-local function ShowPartyFrame()
-	Healium_ShowHidePartyFrame(true)
-end
-
 local function SetButtonCount(info, arg1)
 	if InCombatLockdown() then
 		Healium_Warn("Can't update button count while in combat!")
 		return
 	end
-	
 	Healium_SetButtonCount(arg1)
 end
 
@@ -55,7 +50,7 @@ local MenuTable = {
 			{
 				text = "Show Party",
 				notCheckable = 1,
-				func = ShowPartyFrame,
+				func = function() Healium_ShowHidePartyFrame(true) end,
 			},
 			{
 				text = "Hide All Raid Groups",
@@ -89,11 +84,11 @@ local function HealiumMenu_InitializeDropDown(self, level)
 		local closeEntry = MenuTable[1][6]
 		if not closeEntry then
 			MenuTable[1][6] = {
-				hasArrow  = nil,
-				value     = nil,
+				hasArrow     = nil,
+				value        = nil,
 				notCheckable = 1,
-				text      = CLOSE,
-				func      = self.HideMenu
+				text         = CLOSE,
+				func         = self.HideMenu,
 			}
 		else
 			closeEntry.func = self.HideMenu
@@ -113,7 +108,7 @@ local function HealiumMenu_InitializeDropDown(self, level)
 	end
 	MenuTable[2].SetButtonCount = sbc
 
-	local info = MenuTable[level]
+	local info    = MenuTable[level]
 	local menuval = UIDROPDOWNMENU_MENU_VALUE
 
 	if level > 1 and menuval and info[menuval] then

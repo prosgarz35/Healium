@@ -1,17 +1,35 @@
 local ClassIcon = {
-        DRUID   = "Interface/Icons/INV_Misc_MonsterClaw_04",
-        MAGE    = "Interface/Icons/INV_Staff_13",
-        PRIEST  = "Interface/Icons/INV_Staff_30",
-        SHAMAN  = "Interface/Icons/Spell_Nature_BloodLust",
-        PALADIN = "Interface/Icons/Ability_ThunderBolt",
-        DEATHKNIGHT = "Interface/Icons/Spell_Deathknight_ClassIcon"
+	DRUID       = "Interface/Icons/INV_Misc_MonsterClaw_04",
+	MAGE        = "Interface/Icons/INV_Staff_13",
+	PRIEST      = "Interface/Icons/INV_Staff_30",
+	SHAMAN      = "Interface/Icons/Spell_Nature_BloodLust",
+	PALADIN     = "Interface/Icons/Ability_ThunderBolt",
+	DEATHKNIGHT = "Interface/Icons/Spell_Deathknight_ClassIcon",
 }
 
+-- Factory: creates a labelled checkbox anchored relative to another frame.
+-- anchor  : parent frame to anchor BOTTOMLEFT → TOPLEFT; pass nil to position manually after.
+-- offsetX : horizontal offset from anchor (default 0)
+-- offsetY : vertical offset from anchor (default 0)
+local function CreateOptionCheckButton(parent, anchor, label, tooltip, onClick, offsetX, offsetY)
+	local cb = CreateFrame("CheckButton", nil, parent, "OptionsCheckButtonTemplate")
+	if anchor then
+		cb:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", offsetX or 0, offsetY or 0)
+	end
+	cb.Text = cb:CreateFontString(nil, "BACKGROUND", "GameFontNormal")
+	cb.Text:SetPoint("LEFT", cb, "RIGHT", 0)
+	cb.Text:SetText(label)
+	cb.tooltipText = tooltip
+	cb:SetScript("OnClick", onClick)
+	return cb
+end
+
+-- ── Handler functions ────────────────────────────────────────────────────────
 
 function Healium_SetButtonCount(count)
-  HealiumMaxButtonSlider.Text:SetText("Show |cFFFFFFFF"..count.. "|r Buttons")
-  Healium_GetProfile().ButtonCount = count
-  Healium_UpdateButtonVisibility()
+	HealiumMaxButtonSlider.Text:SetText("Show |cFFFFFFFF" .. count .. "|r Buttons")
+	Healium_GetProfile().ButtonCount = count
+	Healium_UpdateButtonVisibility()
 end
 
 local function MaxButtonSlider_Update(self)
@@ -31,7 +49,6 @@ local function ClassColorCheck_OnClick(self)
 	Healium.UseClassColors = self:GetChecked() or false
 	Healium_UpdateClassColors()
 end
-
 
 local function HideCloseButtonCheck_OnClick(self)
 	Healium.HideCloseButton = self:GetChecked() or false
@@ -53,17 +70,10 @@ local function ShowManaCheck_OnClick(self)
 end
 
 local function UpdateEnableDebuffsControls(self)
-	local color 
-	if self:GetChecked() then
-		color = NORMAL_FONT_COLOR
-	else
-		color = GRAY_FONT_COLOR
-	end
-	
-	for _,j in ipairs(self.children) do
+	local color = self:GetChecked() and NORMAL_FONT_COLOR or GRAY_FONT_COLOR
+	for _, j in ipairs(self.children) do
 		j:SetTextColor(color.r, color.g, color.b)
 	end
-
 end
 
 local function EnableDebuffsCheck_OnClick(self)
@@ -71,8 +81,6 @@ local function EnableDebuffsCheck_OnClick(self)
 	Healium.EnableDebufs = self:GetChecked() or false
 	Healium_UpdateEnableDebuffs()
 end
-
-
 
 local function EnableDebuffHealthbarHighlightingCheck_OnClick(self)
 	Healium.EnableDebufHealthbarHighlighting = self:GetChecked() or false
@@ -92,17 +100,17 @@ end
 local function ScaleSlider_OnValueChanged(self)
 	Healium.Scale = self:GetValue()
 	Healium_SetScale()
-	self.Text:SetText("Scale: |cFFFFFFFF".. format("%.1f",Healium.Scale))
+	self.Text:SetText("Scale: |cFFFFFFFF" .. format("%.1f", Healium.Scale))
 end
 
-
+-- ── Public API ───────────────────────────────────────────────────────────────
 
 function Healium_ShowConfigPanel()
-    if (InterfaceOptionsFrame:IsVisible()) then
-      InterfaceOptionsFrame:Hide()
-     else
-	  InterfaceOptionsFrame_OpenToCategory(Healium_AddonName)
-    end
+	if InterfaceOptionsFrame:IsVisible() then
+		InterfaceOptionsFrame:Hide()
+	else
+		InterfaceOptionsFrame_OpenToCategory(Healium_AddonName)
+	end
 end
 
 function Healium_Update_ConfigPanel()
@@ -110,325 +118,232 @@ function Healium_Update_ConfigPanel()
 end
 
 function Healium_CreateConfigPanel(Class, Version)
---	Healium_DebugPrint("Begin Healium_CreateAddonOptionFrame()")
-	local Profile = Healium_GetProfile()
-	
 	local panel = CreateFrame("Frame", nil, UIParent)
-	panel.name = Healium_AddonName
-	panel.okay = function (self) end
-	panel.cancel = function (self) end
+	panel.name   = Healium_AddonName
+	panel.okay   = function() end
+	panel.cancel = function() end
 	InterfaceOptions_AddCategory(panel)
 
-	local scrollframe = CreateFrame("ScrollFrame", "HealiumPanelScrollFrame", panel, "UIPanelScrollFrameTemplate") 
-	local framewidth = InterfaceOptionsFramePanelContainer:GetWidth()
-	local frameheight = InterfaceOptionsFramePanelContainer:GetHeight() 
+	local scrollframe = CreateFrame("ScrollFrame", "HealiumPanelScrollFrame", panel, "UIPanelScrollFrameTemplate")
+	local framewidth  = InterfaceOptionsFramePanelContainer:GetWidth()
+	local frameheight = InterfaceOptionsFramePanelContainer:GetHeight()
 	scrollframe:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -25)
-	scrollframe:SetWidth(framewidth-45)
-	scrollframe:SetHeight(frameheight-45)
+	scrollframe:SetWidth(framewidth - 45)
+	scrollframe:SetHeight(frameheight - 45)
 	scrollframe:Show()
-	
-    scrollframe.scrollbar = _G["HealiumPanelScrollFrameScrollBar"]   
-    scrollframe.scrollbar:SetBackdrop({   
-        edgeFile = "Interface/Tooltips/UI-Tooltip-Border",   
-        edgeSize = 8,   
-        tileSize = 32,   
-        insets = { left = 0, right =0, top =5, bottom = 5 }})   
-	
-	
-	local scrollchild = CreateFrame("Frame", "$parentScrollChild", scrollframe)
-	scrollframe:SetScrollChild(scrollchild)	
 
-	-- The Height and Width here are important.  The Width will control placement of the class icon since it attaches to TOPRIGHT of scrollchild.
-	scrollchild:SetHeight(frameheight - 45)	
+	scrollframe.scrollbar = _G["HealiumPanelScrollFrameScrollBar"]
+	scrollframe.scrollbar:SetBackdrop({
+		edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+		edgeSize = 8,
+		tileSize = 32,
+		insets   = { left = 0, right = 0, top = 5, bottom = 5 },
+	})
+
+	local scrollchild = CreateFrame("Frame", "$parentScrollChild", scrollframe)
+	scrollframe:SetScrollChild(scrollchild)
+	-- Width controls class icon placement (attaches to TOPRIGHT of scrollchild)
+	scrollchild:SetHeight(frameheight - 45)
 	scrollchild:SetWidth(framewidth - 45)
 	scrollchild:Show()
-	
-	-- Title text
-	local TitleText = scrollchild:CreateFontString(nil, "OVERLAY","GameFontNormalLarge")
+
+	-- ── Title ────────────────────────────────────────────────────────────────
+	local TitleText = scrollchild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	TitleText:SetJustifyH("LEFT")
 	TitleText:SetPoint("TOPLEFT", 10, -10)
 	TitleText:SetText(Healium_AddonColoredName .. Version)
-	-- Title subtext
-	local TitleSubText = scrollchild:CreateFontString(nil, "OVERLAY","GameFontNormalSmall")
+
+	local TitleSubText = scrollchild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	TitleSubText:SetJustifyH("LEFT")
 	TitleSubText:SetPoint("TOPLEFT", 10, -30)
 	TitleSubText:SetText("Welcome to the " .. Healium_AddonColoredName .. "  options screen.|nUse the scrollbar to access more options.")
-	TitleSubText:SetTextColor(1,1,1,1) 
-  
-	-- Create the Class Icon 
-  	local HealiumClassIcon = CreateFrame("Frame", "HealiumClassIcon" ,scrollchild)
-	HealiumClassIcon:SetPoint("TOPRIGHT",-20,0)
+	TitleSubText:SetTextColor(1, 1, 1, 1)
+
+	-- ── Class icon ───────────────────────────────────────────────────────────
+	local HealiumClassIcon = CreateFrame("Frame", "HealiumClassIcon", scrollchild)
+	HealiumClassIcon:SetPoint("TOPRIGHT", -20, 0)
+	HealiumClassIcon:SetHeight(60)
+	HealiumClassIcon:SetWidth(60)
 	HealiumClassIconTexture = HealiumClassIcon:CreateTexture(nil, "BACKGROUND")
 	HealiumClassIconTexture:SetAllPoints()
 	HealiumClassIconTexture:SetTexture(ClassIcon[Class])
-	HealiumClassIcon:SetHeight(60)
-	HealiumClassIcon:SetWidth(60)
-	HealiumClassIcon.Text = HealiumClassIcon:CreateFontString(nil, "OVERLAY","GameFontNormalLarge")
+	HealiumClassIcon.Text = HealiumClassIcon:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	HealiumClassIcon.Text:SetText(strupper(Class))
-	HealiumClassIcon.Text:SetPoint("CENTER",0,-38)
-	HealiumClassIcon.Text:SetTextColor(1,1,0.2,1)
+	HealiumClassIcon.Text:SetPoint("CENTER", 0, -38)
+	HealiumClassIcon.Text:SetTextColor(1, 1, 0.2, 1)
 
- 	
-	-- ToolTips Check Button
-    local TooltipsCheck = CreateFrame("CheckButton","$parentShowTooltipCheckButton",scrollchild,"OptionsCheckButtonTemplate")
-	TooltipsCheck:SetPoint("TOPLEFT",5,-70)	
-    
-    TooltipsCheck.Text = TooltipsCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-	TooltipsCheck.Text:SetPoint("LEFT", TooltipsCheck, "RIGHT", 0)
-    TooltipsCheck.Text:SetText("Show Button ToolTips")
-	
-    TooltipsCheck:SetScript("OnClick", TooltipsCheck_OnClick)
-	TooltipsCheck.tooltipText = "Shows spell tooltips when hovering the mouse over the " .. Healium_AddonColoredName .. " buttons."
+	-- ── Checkboxes (via factory) ──────────────────────────────────────────────
+	local TooltipsCheck = CreateOptionCheckButton(scrollchild, nil,
+		"Show Button ToolTips",
+		"Shows spell tooltips when hovering the mouse over the " .. Healium_AddonColoredName .. " buttons.",
+		TooltipsCheck_OnClick)
+	TooltipsCheck:SetPoint("TOPLEFT", 5, -70)
 
-	-- ShowMana Check Button
-    local ShowManaCheck = CreateFrame("CheckButton","$parentShowManaButton",scrollchild,"OptionsCheckButtonTemplate")
-    ShowManaCheck:SetPoint("TOPLEFT", TooltipsCheck, "BOTTOMLEFT", 0, 0)
-    
-    ShowManaCheck.Text = ShowManaCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-	ShowManaCheck.Text:SetPoint("LEFT", ShowManaCheck, "RIGHT", 0)
-    ShowManaCheck.Text:SetText("Show Mana")
-	
-	ShowManaCheck:SetScript("OnClick", ShowManaCheck_OnClick)
-	ShowManaCheck.tooltipText = "Shows the unit's mana."
+	local ShowManaCheck = CreateOptionCheckButton(scrollchild, TooltipsCheck,
+		"Show Mana", "Shows the unit's mana.", ShowManaCheck_OnClick)
 
-	
-	-- Percentage Check button
-    local PercentageCheck = CreateFrame("CheckButton","$parentShowTooltipCheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    PercentageCheck:SetPoint("TOPLEFT", ShowManaCheck, "BOTTOMLEFT", 0, 0)
-    
-    PercentageCheck.Text = PercentageCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-	PercentageCheck.Text:SetPoint("LEFT", PercentageCheck, "RIGHT", 0)
-    PercentageCheck.Text:SetText("Show Health Percentage")
-	
-	PercentageCheck:SetScript("OnClick", PercentageCheck_OnClick)
-	PercentageCheck.tooltipText = "Shows the unit's health as a percentage on the right side of the health bar."
-	
-	-- ClassColor Check button
-    local ClassColorCheck = CreateFrame("CheckButton","$parentClassColorCheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    ClassColorCheck:SetPoint("TOPLEFT", PercentageCheck, "BOTTOMLEFT", 0, 0)
-    
-    ClassColorCheck.Text = ClassColorCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-	ClassColorCheck.Text:SetPoint("LEFT", ClassColorCheck, "RIGHT", 0)
-    ClassColorCheck.Text:SetText("Use Class Colors")
-	
-    ClassColorCheck:SetScript("OnClick", ClassColorCheck_OnClick)
-	ClassColorCheck.tooltipText = "Colors the healthbar based on the unit's class instead of green/yellow/red based on it's current health."
-	
-	-- Hide Close Check button
-    local HideCloseButtonCheck = CreateFrame("CheckButton","$parentHideCloseCheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    HideCloseButtonCheck:SetPoint("TOPLEFT", ClassColorCheck, "BOTTOMLEFT", 0, 0)
-    
-    HideCloseButtonCheck.Text = HideCloseButtonCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-	HideCloseButtonCheck.Text:SetPoint("LEFT", HideCloseButtonCheck, "RIGHT", 0)
-    HideCloseButtonCheck.Text:SetText("Hide Close Buttons")
+	local PercentageCheck = CreateOptionCheckButton(scrollchild, ShowManaCheck,
+		"Show Health Percentage",
+		"Shows the unit's health as a percentage on the right side of the health bar.",
+		PercentageCheck_OnClick)
 
-	HideCloseButtonCheck:SetScript("OnClick", HideCloseButtonCheck_OnClick)	
-	HideCloseButtonCheck.tooltipText = "Hides the X (close) button on the upper-right of the " .. Healium_AddonColoredName ..	" caption bar."
+	local ClassColorCheck = CreateOptionCheckButton(scrollchild, PercentageCheck,
+		"Use Class Colors",
+		"Colors the healthbar based on the unit's class instead of green/yellow/red based on it's current health.",
+		ClassColorCheck_OnClick)
 
-	-- Hide Captions Check button
-    local HideCaptionsCheck = CreateFrame("CheckButton","$parentHideCaptionsCheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    HideCaptionsCheck:SetPoint("TOPLEFT", HideCloseButtonCheck, "BOTTOMLEFT", 0, 0)
-    
-    HideCaptionsCheck.Text = HideCaptionsCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-	HideCaptionsCheck.Text:SetPoint("LEFT", HideCaptionsCheck, "RIGHT", 0)
-    HideCaptionsCheck.Text:SetText("Hide Captions")
+	local HideCloseButtonCheck = CreateOptionCheckButton(scrollchild, ClassColorCheck,
+		"Hide Close Buttons",
+		"Hides the X (close) button on the upper-right of the " .. Healium_AddonColoredName .. " caption bar.",
+		HideCloseButtonCheck_OnClick)
 
-	HideCaptionsCheck:SetScript("OnClick", HideCaptionsCheck_OnClick)	
-	HideCaptionsCheck.tooltipText = "Automatically hides the caption bar of "  .. Healium_AddonColoredName .. " frames when the mouse leaves the caption."
-	
-	-- Lock Frame Positions Check button
-    local LockFramePositionsCheck = CreateFrame("CheckButton","$parentLockFramePositionsCheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    LockFramePositionsCheck:SetPoint("TOPLEFT", HideCaptionsCheck, "BOTTOMLEFT", 0, 0)
-    
-    LockFramePositionsCheck.Text = LockFramePositionsCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-	LockFramePositionsCheck.Text:SetPoint("LEFT", LockFramePositionsCheck, "RIGHT", 0)
-    LockFramePositionsCheck.Text:SetText("Lock Frame Positions")
+	local HideCaptionsCheck = CreateOptionCheckButton(scrollchild, HideCloseButtonCheck,
+		"Hide Captions",
+		"Automatically hides the caption bar of " .. Healium_AddonColoredName .. " frames when the mouse leaves the caption.",
+		HideCaptionsCheck_OnClick)
 
-	LockFramePositionsCheck:SetScript("OnClick", LockFramePositionsCheck_OnClick)	
-	LockFramePositionsCheck.tooltipText = "Prevents dragging of any " .. Healium_AddonColoredName .. " frames."	
-	
+	local LockFramePositionsCheck = CreateOptionCheckButton(scrollchild, HideCaptionsCheck,
+		"Lock Frame Positions",
+		"Prevents dragging of any " .. Healium_AddonColoredName .. " frames.",
+		LockFramePositionsCheck_OnClick)
 
-	-- Slider for controling how many buttons to show
-    HealiumMaxButtonSlider = CreateFrame("Slider","$parentMaxButtonSlider",scrollchild,"OptionsSliderTemplate")
-    HealiumMaxButtonSlider:SetWidth(128)
-    HealiumMaxButtonSlider:SetHeight(16)
-          
-    HealiumMaxButtonSlider:SetPoint("TOPLEFT", 220, -110)
-      
-    HealiumMaxButtonSlider:SetMinMaxValues(0,Healium_MaxButtons)
-    HealiumMaxButtonSlider:SetValueStep(1)
-    HealiumMaxButtonSlider:SetValue(Healium_GetProfile().ButtonCount)
+	-- ── Button count slider ───────────────────────────────────────────────────
+	HealiumMaxButtonSlider = CreateFrame("Slider", "$parentMaxButtonSlider", scrollchild, "OptionsSliderTemplate")
+	HealiumMaxButtonSlider:SetWidth(128)
+	HealiumMaxButtonSlider:SetHeight(16)
+	HealiumMaxButtonSlider:SetPoint("TOPLEFT", 220, -110)
+	HealiumMaxButtonSlider:SetMinMaxValues(0, Healium_MaxButtons)
+	HealiumMaxButtonSlider:SetValueStep(1)
+	HealiumMaxButtonSlider:SetValue(Healium_GetProfile().ButtonCount)
 	HealiumMaxButtonSlider.tooltipText = "How many " .. Healium_AddonColoredName .. " buttons to show."
-      
-    HealiumMaxButtonSlider.Text = HealiumMaxButtonSlider:CreateFontString(nil, "BACKGROUND","GameFontNormalLarge")
-    HealiumMaxButtonSlider.Text:SetPoint("CENTER", 0, 17)
-    HealiumMaxButtonSlider.Text:SetText("Show |cFFFFFFFF"..HealiumMaxButtonSlider:GetValue().. "|r Buttons")
-      
-    _G[HealiumMaxButtonSlider:GetName().."Low"]:SetText("0")
-    _G[HealiumMaxButtonSlider:GetName().."High"]:SetText(Healium_MaxButtons)
-      
-    HealiumMaxButtonSlider:SetScript("OnValueChanged",MaxButtonSlider_Update)
-    HealiumMaxButtonSlider:Show()
-  
-    -- Slider for Scaling
-    local ScaleSlider = CreateFrame("Slider","HealiumScaleSlider",scrollchild,"OptionsSliderTemplate")
-    ScaleSlider:SetWidth(100)
-    ScaleSlider:SetHeight(16)
-    
-    _G[ScaleSlider:GetName().."Low"]:SetText("Small")
-    _G[ScaleSlider:GetName().."High"]:SetText("Large")
-    
-    ScaleSlider:SetMinMaxValues(0.6,1.5)
-    ScaleSlider:SetValueStep(0.1)
-    ScaleSlider:SetValue(Healium.Scale)
-    
-    ScaleSlider:SetPoint("TOPLEFT", HealiumMaxButtonSlider, "BOTTOMLEFT", 0, -30)
-    
-    ScaleSlider.Text = ScaleSlider:CreateFontString(nil, "BACKGROUND","GameFontNormalLarge")
-    ScaleSlider.Text:SetPoint("CENTER", -5, 17)
-    ScaleSlider.Text:SetText("Scale: |cFFFFFFFF".. format("%.1f",ScaleSlider:GetValue()))
- 
-    ScaleSlider:SetScript("OnValueChanged", ScaleSlider_OnValueChanged)
+	HealiumMaxButtonSlider.Text = HealiumMaxButtonSlider:CreateFontString(nil, "BACKGROUND", "GameFontNormalLarge")
+	HealiumMaxButtonSlider.Text:SetPoint("CENTER", 0, 17)
+	HealiumMaxButtonSlider.Text:SetText("Show |cFFFFFFFF" .. HealiumMaxButtonSlider:GetValue() .. "|r Buttons")
+	_G[HealiumMaxButtonSlider:GetName() .. "Low"]:SetText("0")
+	_G[HealiumMaxButtonSlider:GetName() .. "High"]:SetText(Healium_MaxButtons)
+	HealiumMaxButtonSlider:SetScript("OnValueChanged", MaxButtonSlider_Update)
+	HealiumMaxButtonSlider:Show()
+
+	-- ── Scale slider ─────────────────────────────────────────────────────────
+	local ScaleSlider = CreateFrame("Slider", "HealiumScaleSlider", scrollchild, "OptionsSliderTemplate")
+	ScaleSlider:SetWidth(100)
+	ScaleSlider:SetHeight(16)
+	ScaleSlider:SetMinMaxValues(0.6, 1.5)
+	ScaleSlider:SetValueStep(0.1)
+	ScaleSlider:SetValue(Healium.Scale)
+	ScaleSlider:SetPoint("TOPLEFT", HealiumMaxButtonSlider, "BOTTOMLEFT", 0, -30)
+	_G[ScaleSlider:GetName() .. "Low"]:SetText("Small")
+	_G[ScaleSlider:GetName() .. "High"]:SetText("Large")
+	ScaleSlider.Text = ScaleSlider:CreateFontString(nil, "BACKGROUND", "GameFontNormalLarge")
+	ScaleSlider.Text:SetPoint("CENTER", -5, 17)
+	ScaleSlider.Text:SetText("Scale: |cFFFFFFFF" .. format("%.1f", ScaleSlider:GetValue()))
+	ScaleSlider:SetScript("OnValueChanged", ScaleSlider_OnValueChanged)
 	ScaleSlider.tooltipText = "Sets the scale of all " .. Healium_AddonColoredName .. " frames."
 
-	-- Show Frames Settings
-	local ShowFramesTitleText = scrollchild:CreateFontString(nil, "OVERLAY","GameFontNormalLarge")
+	-- ── Show Frames section ───────────────────────────────────────────────────
+	local ShowFramesTitleText = scrollchild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	ShowFramesTitleText:SetJustifyH("LEFT")
 	ShowFramesTitleText:SetPoint("TOPLEFT", LockFramePositionsCheck, "BOTTOMLEFT", 0, -30)
-	ShowFramesTitleText:SetText("Show Frames")	
-	
-	local ShowFramesTitleSubText = scrollchild:CreateFontString(nil, "OVERLAY","GameFontNormalSmall")
+	ShowFramesTitleText:SetText("Show Frames")
+
+	local ShowFramesTitleSubText = scrollchild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	ShowFramesTitleSubText:SetJustifyH("LEFT")
 	ShowFramesTitleSubText:SetPoint("TOPLEFT", ShowFramesTitleText, "BOTTOMLEFT", 0, 0)
 	ShowFramesTitleSubText:SetText("Check each frame to show.")
-	ShowFramesTitleSubText:SetTextColor(1,1,1,1) 
-	
-	-- Show Party Check
-    Healium_ShowPartyCheck = CreateFrame("CheckButton","$parentShowPartyCheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    Healium_ShowPartyCheck:SetPoint("TOPLEFT",ShowFramesTitleSubText, "BOTTOMLEFT", 0, -10)
-	Healium_ShowPartyCheck.tooltipText = "Shows the Party " .. Healium_AddonColoredName .. " frame."
-    Healium_ShowPartyCheck.Text = Healium_ShowPartyCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-    Healium_ShowPartyCheck.Text:SetPoint("LEFT", Healium_ShowPartyCheck, "RIGHT", 0)
-    Healium_ShowPartyCheck.Text:SetText("Party")
-    
-    Healium_ShowPartyCheck:SetScript("OnClick",function()
-        Healium.ShowPartyFrame = Healium_ShowPartyCheck:GetChecked() or false
-		Healium_ShowHidePartyFrame()
-    end)
+	ShowFramesTitleSubText:SetTextColor(1, 1, 1, 1)
 
+	-- Party check (global, referenced from HealiumUnitFrames.lua)
+	Healium_ShowPartyCheck = CreateOptionCheckButton(scrollchild, ShowFramesTitleSubText,
+		"Party",
+		"Shows the Party " .. Healium_AddonColoredName .. " frame.",
+		function(self)
+			Healium.ShowPartyFrame = self:GetChecked() or false
+			Healium_ShowHidePartyFrame()
+		end,
+		0, -10)
+
+	-- Group checkboxes; stored in _G so HealiumUnitFrames can find them by name
 	local prevCheck = Healium_ShowPartyCheck
 	for i = 1, 8 do
-		local checkName = "Healium_ShowGroup" .. i .. "Check"
-		local check = CreateFrame("CheckButton", "$parentShowGroup"..i.."CheckButton", scrollchild, "OptionsCheckButtonTemplate")
-		check:SetPoint("TOPLEFT", prevCheck, "BOTTOMLEFT", 0, 0)
-		check.tooltipText = "Shows the Group " .. i .. " " .. Healium_AddonColoredName .. " frame."
-		
-		check.Text = check:CreateFontString(nil, "BACKGROUND", "GameFontNormal")
-		check.Text:SetPoint("LEFT", check, "RIGHT", 0)
-		check.Text:SetText("Group " .. i)
-		
-		check:SetScript("OnClick", function(self)
-			Healium.ShowGroupFrames[i] = self:GetChecked() or false
-			Healium_ShowHideGroupFrame(i)
-		end)
-		
-		_G[checkName] = check
+		local check = CreateOptionCheckButton(scrollchild, prevCheck,
+			"Group " .. i,
+			"Shows the Group " .. i .. " " .. Healium_AddonColoredName .. " frame.",
+			function(self)
+				Healium.ShowGroupFrames[i] = self:GetChecked() or false
+				Healium_ShowHideGroupFrame(i)
+			end)
+		_G["Healium_ShowGroup" .. i .. "Check"] = check
 		prevCheck = check
-	end		
-	
-	-- Debuff Warnings
-	local DebuffWarningsTitleText = scrollchild:CreateFontString(nil, "OVERLAY","GameFontNormalLarge")
+	end
+	-- prevCheck now holds the Group 8 checkbox (used as anchor below)
+
+	-- ── Debuff Warnings section ───────────────────────────────────────────────
+	local DebuffWarningsTitleText = scrollchild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	DebuffWarningsTitleText:SetJustifyH("LEFT")
-	DebuffWarningsTitleText:SetPoint("TOPLEFT", Healium_ShowGroup8Check, "BOTTOMLEFT", 0, -30)
+	DebuffWarningsTitleText:SetPoint("TOPLEFT", prevCheck, "BOTTOMLEFT", 0, -30)
 	DebuffWarningsTitleText:SetText("Debuff Warnings")
-	
-	local DebuffWarningsSubText = scrollchild:CreateFontString(nil, "OVERLAY","GameFontNormalSmall")
+
+	local DebuffWarningsSubText = scrollchild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	DebuffWarningsSubText:SetJustifyH("LEFT")
 	DebuffWarningsSubText:SetPoint("TOPLEFT", DebuffWarningsTitleText, "BOTTOMLEFT", 0, 0)
 	DebuffWarningsSubText:SetText("Debuff warnings are audible and visual indicators that|nnotify you when you can cure a debuff on a player.")
-	DebuffWarningsSubText:SetTextColor(1,1,1,1) 
+	DebuffWarningsSubText:SetTextColor(1, 1, 1, 1)
 
-	
-	-- Enable Debuffs check button
-    local EnableDebuffsCheck = CreateFrame("CheckButton","$parentEnableDebuffsCheckButton",scrollchild,"OptionsCheckButtonTemplate")
-	EnableDebuffsCheck.children = { }
-    EnableDebuffsCheck:SetPoint("TOPLEFT", DebuffWarningsSubText, "BOTTOMLEFT", 0, -10)
-    
-    EnableDebuffsCheck.Text = EnableDebuffsCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-	EnableDebuffsCheck.Text:SetPoint("LEFT", EnableDebuffsCheck, "RIGHT", 0)
-    EnableDebuffsCheck.Text:SetText("Enable Debuff Warnings")
+	-- EnableDebuffsCheck needs a .children table for its sub-options
+	local EnableDebuffsCheck = CreateOptionCheckButton(scrollchild, DebuffWarningsSubText,
+		"Enable Debuff Warnings", "Enables debuff warnings",
+		EnableDebuffsCheck_OnClick, 0, -10)
+	EnableDebuffsCheck.children = {}
 
-	EnableDebuffsCheck:SetScript("OnClick", EnableDebuffsCheck_OnClick)	
-	EnableDebuffsCheck.tooltipText = "Enables debuff warnings"
-
-	-- Enable Debuff Healthbar coloring check button 
-	
-	local EnableDebufHealthbarColoringCheck	= CreateFrame("CheckButton","$parentEnableDebuffHealthbarColoringCheckButton",scrollchild,"OptionsCheckButtonTemplate")
-    EnableDebufHealthbarColoringCheck:SetPoint("TOPLEFT", EnableDebuffsCheck, "BOTTOMLEFT", 20, 0)
-    
-    EnableDebufHealthbarColoringCheck.Text = EnableDebufHealthbarColoringCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-	EnableDebufHealthbarColoringCheck.Text:SetPoint("LEFT", EnableDebufHealthbarColoringCheck, "RIGHT", 0)
-    EnableDebufHealthbarColoringCheck.Text:SetText("Healthbar Coloring")
+	-- Sub-options (indented X=20 from EnableDebuffsCheck, then chained vertically)
+	local EnableDebufHealthbarColoringCheck = CreateOptionCheckButton(scrollchild, EnableDebuffsCheck,
+		"Healthbar Coloring",
+		"Enables coloring of the healthbar of a player that has a debuff which you can cure",
+		EnableDebuffHealthbarColoringCheck_OnClick, 20)
 	table.insert(EnableDebuffsCheck.children, EnableDebufHealthbarColoringCheck.Text)
-	
-	EnableDebufHealthbarColoringCheck:SetScript("OnClick", EnableDebuffHealthbarColoringCheck_OnClick)	
-	EnableDebufHealthbarColoringCheck.tooltipText = "Enables coloring of the healthbar of a player that has a debuff which you can cure"
-	
-	
-	-- Enable Debuff Healthbar highlighting check button
-    local EnableDebuffHealthbarHighlightingCheck = CreateFrame("CheckButton","$parentEnableDebuffHealthbarHighlightingCheck",scrollchild,"OptionsCheckButtonTemplate")
-    EnableDebuffHealthbarHighlightingCheck:SetPoint("TOPLEFT", EnableDebufHealthbarColoringCheck, "BOTTOMLEFT", 0, 0)
-    
-    EnableDebuffHealthbarHighlightingCheck.Text = EnableDebuffHealthbarHighlightingCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-	EnableDebuffHealthbarHighlightingCheck.Text:SetPoint("LEFT", EnableDebuffHealthbarHighlightingCheck, "RIGHT", 0)
-    EnableDebuffHealthbarHighlightingCheck.Text:SetText("Healthbar Highlight Warning")
+
+	local EnableDebuffHealthbarHighlightingCheck = CreateOptionCheckButton(scrollchild, EnableDebufHealthbarColoringCheck,
+		"Healthbar Highlight Warning",
+		"Enables highlighting of the healthbar of a player that has a debuff which you can cure",
+		EnableDebuffHealthbarHighlightingCheck_OnClick)
 	table.insert(EnableDebuffsCheck.children, EnableDebuffHealthbarHighlightingCheck.Text)
-	
-	EnableDebuffHealthbarHighlightingCheck:SetScript("OnClick", EnableDebuffHealthbarHighlightingCheck_OnClick)	
-	EnableDebuffHealthbarHighlightingCheck.tooltipText = "Enables highlighting of the healthbar of a player that has a debuff which you can cure"
 
-
-	-- Enable Debuff Button highlighting check button
-    local EnableDebuffButtonHighlightingCheck = CreateFrame("CheckButton","$parentEnableDebuffButtonHighlightingCheck",scrollchild,"OptionsCheckButtonTemplate")
-    EnableDebuffButtonHighlightingCheck:SetPoint("TOPLEFT", EnableDebuffHealthbarHighlightingCheck, "BOTTOMLEFT", 0, 0)
-    
-    EnableDebuffButtonHighlightingCheck.Text = EnableDebuffButtonHighlightingCheck:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-	EnableDebuffButtonHighlightingCheck.Text:SetPoint("LEFT", EnableDebuffButtonHighlightingCheck, "RIGHT", 0)
-    EnableDebuffButtonHighlightingCheck.Text:SetText("Button Highlight Warning")
+	local EnableDebuffButtonHighlightingCheck = CreateOptionCheckButton(scrollchild, EnableDebuffHealthbarHighlightingCheck,
+		"Button Highlight Warning",
+		"Enables highlighting of buttons which have been assigned a spell that can cure a debuff on a player",
+		EnableDebuffButtonHighlightingCheck_OnClick)
 	table.insert(EnableDebuffsCheck.children, EnableDebuffButtonHighlightingCheck.Text)
-	
-	EnableDebuffButtonHighlightingCheck:SetScript("OnClick", EnableDebuffButtonHighlightingCheck_OnClick)	
-	EnableDebuffButtonHighlightingCheck.tooltipText = "Enables highlighting of buttons which have been assigned a spell that can cure a debuff on a player"
 
-    -- About Frame
-    local AboutTitle = CreateFrame("Frame","",scrollchild)
-    AboutTitle:SetFrameStrata("TOOLTIP")
-    AboutTitle:SetWidth(160)
-    AboutTitle:SetHeight(20)
-    
-    AboutTitle.Text = AboutTitle:CreateFontString(nil, "BACKGROUND","GameFontNormalLarge")
-    AboutTitle.Text:SetPoint("TOPLEFT",EnableDebuffButtonHighlightingCheck, "BOTTOMLEFT", 0, -30)
-    AboutTitle.Text:SetText("About " .. Healium_AddonColoredName)
-    
-    local AboutFrame = CreateFrame("Frame","AboutHealium",scrollchild)
-    AboutFrame:SetWidth(340)
-    AboutFrame:SetHeight(80)
-    AboutFrame:SetPoint("TOPLEFT", AboutTitle.Text, "BOTTOMLEFT", 0, 0)
+	-- ── About section ─────────────────────────────────────────────────────────
+	local AboutTitle = CreateFrame("Frame", "", scrollchild)
+	AboutTitle:SetFrameStrata("TOOLTIP")
+	AboutTitle:SetWidth(160)
+	AboutTitle:SetHeight(20)
+	AboutTitle.Text = AboutTitle:CreateFontString(nil, "BACKGROUND", "GameFontNormalLarge")
+	AboutTitle.Text:SetPoint("TOPLEFT", EnableDebuffButtonHighlightingCheck, "BOTTOMLEFT", 0, -30)
+	AboutTitle.Text:SetText("About " .. Healium_AddonColoredName)
 
-    AboutFrame:SetBackdrop({bgFile = "",
-    edgeFile = "Interface/Tooltips/UI-Tooltip-Border", 
-    tile = true, tileSize = 16, edgeSize = 16,
-    insets = { left = 4, right = 4, top = 4, bottom = 4 }})
+	local AboutFrame = CreateFrame("Frame", "AboutHealium", scrollchild)
+	AboutFrame:SetWidth(340)
+	AboutFrame:SetHeight(80)
+	AboutFrame:SetPoint("TOPLEFT", AboutTitle.Text, "BOTTOMLEFT", 0, 0)
+	AboutFrame:SetBackdrop({
+		bgFile   = "",
+		edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+		tile     = true, tileSize = 16, edgeSize = 16,
+		insets   = { left = 4, right = 4, top = 4, bottom = 4 },
+	})
+	AboutFrame.Text = AboutFrame:CreateFontString(nil, "BACKGROUND", "GameFontNormal")
+	AboutFrame.Text:SetWidth(330)
+	AboutFrame.Text:SetJustifyH("LEFT")
+	AboutFrame.Text:SetPoint("TOPLEFT", 7, -10)
+	AboutFrame.Text:SetText(Healium_AddonColoredName .. Version ..
+		" |cFFFFFFFFCreated by Engy of Area 52.|n|n|cFFFFFFFFOriginally based on FB Heal Box, which was created by Dourd of Argent Dawn EU.")
 
-    AboutFrame.Text = AboutFrame:CreateFontString(nil, "BACKGROUND","GameFontNormal")
-    AboutFrame.Text:SetWidth(330)
-    AboutFrame.Text:SetJustifyH("LEFT")
-    AboutFrame.Text:SetPoint("TOPLEFT", 7,-10)
-    AboutFrame.Text:SetText(Healium_AddonColoredName .. Version .. " |cFFFFFFFFCreated by Engy of Area 52.|n|n|cFFFFFFFFOriginally based on FB Heal Box, which was created by Dourd of Argent Dawn EU.")
-
+	-- ── Apply saved values ────────────────────────────────────────────────────
 	Healium_Update_ConfigPanel()
-	
-	TooltipsCheck:SetChecked(Healium.ShowToolTips)		
+
+	TooltipsCheck:SetChecked(Healium.ShowToolTips)
 	ShowManaCheck:SetChecked(Healium.ShowMana)
 	PercentageCheck:SetChecked(Healium.ShowPercentage)
 	ClassColorCheck:SetChecked(Healium.UseClassColors)
@@ -439,15 +354,12 @@ function Healium_CreateConfigPanel(Class, Version)
 	EnableDebuffHealthbarHighlightingCheck:SetChecked(Healium.EnableDebufHealthbarHighlighting)
 	EnableDebuffButtonHighlightingCheck:SetChecked(Healium.EnableDebufButtonHighlighting)
 	EnableDebufHealthbarColoringCheck:SetChecked(Healium.EnableDebufHealthbarColoring)
-	
+
 	Healium_ShowPartyCheck:SetChecked(Healium.ShowPartyFrame)
 	for i = 1, 8 do
-		local checkName = "Healium_ShowGroup" .. i .. "Check"
-		_G[checkName]:SetChecked(Healium.ShowGroupFrames[i])
+		_G["Healium_ShowGroup" .. i .. "Check"]:SetChecked(Healium.ShowGroupFrames[i])
 	end
-	
-	ScaleSlider:SetValue(Healium.Scale)
-	
-	UpdateEnableDebuffsControls(EnableDebuffsCheck)
 
+	ScaleSlider:SetValue(Healium.Scale)
+	UpdateEnableDebuffsControls(EnableDebuffsCheck)
 end

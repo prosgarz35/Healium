@@ -172,11 +172,7 @@ end
 
 function Healium_UpdatePercentageVisibility()
 	for _, k in ipairs(Healium_Frames) do
-		if Healium.ShowPercentage then
-			k.HPText:Show()
-		else
-			k.HPText:Hide()
-		end
+		k.HPText:SetShown(Healium.ShowPercentage)
 	end
 end
 
@@ -209,32 +205,29 @@ end
 
 function Healium_UpdateUnitHealth(UnitName, NamePlate)
 	if not NamePlate or not UnitExists(UnitName) then return end
-		
-	local Health = UnitHealth(UnitName)
+
+	local Health    = UnitHealth(UnitName)
 	local MaxHealth = math.max(1, UnitHealthMax(UnitName))
-	local isDead = UnitIsDeadOrGhost(UnitName)
-		
+	local isDead    = UnitIsDeadOrGhost(UnitName)
+
+	local HPPercent
 	if isDead then
-		Health = 0
-	end
-	
-	local HPPercent = math.max(0, math.min(1, Health / MaxHealth))
-	
-	if isDead then
-		NamePlate.HPText:SetText("dead")	
+		HPPercent = 0
+		NamePlate.HPText:SetText("dead")
 	else
+		HPPercent = math.max(0, math.min(1, Health / MaxHealth))
 		NamePlate.HPText:SetText(math.floor(HPPercent * 100) .. "%")
 	end
-	
-	NamePlate.HealthBar:SetMinMaxValues(0,MaxHealth)
-	NamePlate.HealthBar:SetValue(Health)
-	
+
+	NamePlate.HealthBar:SetMinMaxValues(0, MaxHealth)
+	NamePlate.HealthBar:SetValue(isDead and 0 or Health)
+
 	if Healium.EnableDebufs and Healium.EnableDebufHealthbarColoring and NamePlate.hasDebuf then
-		NamePlate.HealthBar:SetStatusBarColor(NamePlate.debuffColor.r, NamePlate.debuffColor.g, NamePlate.debuffColor.b)					
+		NamePlate.HealthBar:SetStatusBarColor(NamePlate.debuffColor.r, NamePlate.debuffColor.g, NamePlate.debuffColor.b)
 	elseif Healium.UseClassColors then
 		local class = select(2, UnitClass(UnitName)) or "WARRIOR"
 		local color = RAID_CLASS_COLORS[class]
-		NamePlate.HealthBar:SetStatusBarColor(color.r, color.g, color.b)					
+		NamePlate.HealthBar:SetStatusBarColor(color.r, color.g, color.b)
 	else
 		UpdateHealthBar(HPPercent, NamePlate)
 	end
@@ -301,18 +294,11 @@ local SpellCache = nil
 
 local function BuildSpellCache()
 	SpellCache = {}
-	local i = 1
-	while true do
-		-- Always use BOOKTYPE_SPELL, never SpellBookFrame.bookType (may be 'pet' or nil)
+	-- Always use BOOKTYPE_SPELL, never SpellBookFrame.bookType (may be 'pet' or nil)
+	for i = 1, 500 do
 		local spellName, spellRank = GetSpellBookItemName(i, BOOKTYPE_SPELL)
-		if (not spellName) then
-			break
-		end
+		if not spellName then break end
 		SpellCache[spellName] = { id = i, rank = spellRank }
-		i = i + 1
-		if (i > 500) then
-			break
-		end
 	end
 end
 
@@ -336,10 +322,10 @@ local function Healium_UpdateSpells()
 	SpellCache = nil
 	Healium_SpellByName = {}
 	for k, v in ipairs(Healium_Spell.Name) do
-		Healium_Spell.ID[k] = GetSpellID(Healium_Spell.Name[k])
+		Healium_Spell.ID[k] = GetSpellID(v)
 		if Healium_Spell.ID[k] then
 			Healium_Spell.Icon[k] = GetSpellTexture(Healium_Spell.ID[k], BOOKTYPE_SPELL)
-			Healium_SpellByName[Healium_Spell.Name[k]] = Healium_Spell.ID[k]  -- O(1) lookup
+			Healium_SpellByName[v] = Healium_Spell.ID[k]  -- O(1) lookup
 		else
 			Healium_Spell.Icon[k] = nil
 		end
@@ -486,7 +472,7 @@ function Healium_UpdateButtonVisibility()
 	end
 end
 
--- Merge 3 separate Frames-traversals into a single pass to reduce redundant iteration
+-- Single-pass update: visibility + spell attributes + icons merged into one loop per frame
 function Healium_UpdateButtons()
 	if InCombatLockdown() then return end
 
@@ -494,27 +480,17 @@ function Healium_UpdateButtons()
 	local count   = Profile.ButtonCount
 
 	for _, k in ipairs(Healium_Frames) do
-		-- 1. Visibility
 		for i = 1, Healium_MaxButtons do
 			local btn = k.buttons[i]
 			if btn then
 				if i <= count then btn:Show() else btn:Hide() end
-			end
-		end
-		-- 2. Spell attributes + 3. Icons (same loop)
-		for i = 1, Healium_MaxButtons do
-			local btn = k.buttons[i]
-			if btn then
-				local spell   = Profile.SpellNames[i]
-				local id      = Healium_ButtonIDs[i]
-				Healium_UpdateButtonSpell(btn, spell, id, true)
-				local texture = Profile.SpellIcons[i]
-				Healium_UpdateButtonIcon(btn, texture)
+				Healium_UpdateButtonSpell(btn, Profile.SpellNames[i], Healium_ButtonIDs[i], true)
+				Healium_UpdateButtonIcon(btn, Profile.SpellIcons[i])
 			end
 		end
 	end
 
-	-- Spell-hash and cures are still built once outside per-frame loop
+	-- Spell-hash and cures built once outside the per-frame loop
 	Healium_UpdateButtonSpells()
 end
 
@@ -553,27 +529,30 @@ end
 
 -- Sets persisted variables to their default if they do not exist.
 local function InitVariables()
-	local function setDefault(tbl, key, default)
-		if tbl[key] == nil then tbl[key] = default end
-	end
-
 	local H = Healium
-	setDefault(H, "RaidScale",                       1.0)
-	setDefault(H, "ShowToolTips",                    true)
-	setDefault(H, "ShowMana",                        true)
-	setDefault(H, "ShowPercentage",                  true)
-	setDefault(H, "UseClassColors",                  false)
-	setDefault(H, "ShowDefaultPartyFrames",          false)
-	setDefault(H, "ShowPartyFrame",                  true)
-	setDefault(H, "ShowGroupFrames",                 {})
-	setDefault(H, "HideCloseButton",                 false)
-	setDefault(H, "HideCaptions",                    false)
-	setDefault(H, "LockFrames",                      false)
-	setDefault(H, "EnableDebufs",                    true)
-	setDefault(H, "EnableDebufHealthbarHighlighting", true)
-	setDefault(H, "EnableDebufButtonHighlighting",   true)
-	setDefault(H, "EnableDebufHealthbarColoring",    false)
 
+	-- ShowGroupFrames must be a dedicated table per character (never share the default)
+	if H.ShowGroupFrames == nil then H.ShowGroupFrames = {} end
+
+	local DEFAULTS = {
+		RaidScale                        = 1.0,
+		ShowToolTips                     = true,
+		ShowMana                         = true,
+		ShowPercentage                   = true,
+		UseClassColors                   = false,
+		ShowDefaultPartyFrames           = false,
+		ShowPartyFrame                   = true,
+		HideCloseButton                  = false,
+		HideCaptions                     = false,
+		LockFrames                       = false,
+		EnableDebufs                     = true,
+		EnableDebufHealthbarHighlighting = true,
+		EnableDebufButtonHighlighting    = true,
+		EnableDebufHealthbarColoring     = false,
+	}
+	for key, default in pairs(DEFAULTS) do
+		if H[key] == nil then H[key] = default end
+	end
 
 
 	-- Migrate profiles from the old per-character SavedVariable format.
@@ -601,28 +580,25 @@ end
 
 local EventHandlers = {}
 
-function EventHandlers.UNIT_HEALTH(self, arg1, ...)
-	if Healium_Units[arg1] then
-		for v,_ in pairs(Healium_Units[arg1]) do
-			Healium_UpdateUnitHealth(arg1, v)
+-- Shared helper: calls callback(unitName, frame) for every frame tracking unitName
+local function ForEachUnitFrame(unitName, callback)
+	if Healium_Units[unitName] then
+		for frame in pairs(Healium_Units[unitName]) do
+			callback(unitName, frame)
 		end
 	end
 end
 
-function EventHandlers.UNIT_MANA(self, arg1, ...)
-	if Healium_Units[arg1] then
-		for v,_ in pairs(Healium_Units[arg1]) do
-			Healium_UpdateUnitMana(arg1, v)
-		end
-	end
+function EventHandlers.UNIT_HEALTH(_, arg1)
+	ForEachUnitFrame(arg1, Healium_UpdateUnitHealth)
 end
 
-function EventHandlers.UNIT_AURA(self, arg1, ...)
-	if Healium_Units[arg1] then
-		for v,_ in pairs(Healium_Units[arg1]) do
-			Healium_UpdateUnitBuffs(arg1, v)
-		end
-	end
+function EventHandlers.UNIT_MANA(_, arg1)
+	ForEachUnitFrame(arg1, Healium_UpdateUnitMana)
+end
+
+function EventHandlers.UNIT_AURA(_, arg1)
+	ForEachUnitFrame(arg1, Healium_UpdateUnitBuffs)
 end
 
 function EventHandlers.SPELL_UPDATE_COOLDOWN(self, ...)
@@ -687,17 +663,13 @@ function EventHandlers.UNIT_SPELLCAST_SENT(self, arg1, arg2, ...)
 	end
 end
 
-function EventHandlers.UNIT_SPELLCAST_INTERRUPTED(self, arg1, arg2, ...)
-	if (arg1 == "player") and ( (arg2 == ActivatePrimarySpecSpellName) or (arg2 == ActivateSecondarySpecSpellName) ) then
+local function ClearRespecingIfPlayer(self, arg1, arg2)
+	if arg1 == "player" and (arg2 == ActivatePrimarySpecSpellName or arg2 == ActivateSecondarySpecSpellName) then
 		self.Respecing = nil
 	end
 end
-
-function EventHandlers.UNIT_SPELLCAST_SUCCEEDED(self, arg1, arg2, ...)
-	if (arg1 == "player") and ( (arg2 == ActivatePrimarySpecSpellName) or (arg2 == ActivateSecondarySpecSpellName) ) then
-		self.Respecing = nil
-	end
-end
+EventHandlers.UNIT_SPELLCAST_INTERRUPTED = ClearRespecingIfPlayer
+EventHandlers.UNIT_SPELLCAST_SUCCEEDED   = ClearRespecingIfPlayer
 
 function EventHandlers.PLAYER_TALENT_UPDATE(self, ...)
 	Healium_DebugPrint("PLAYER_TALENT_UPDATE")
@@ -728,28 +700,23 @@ function EventHandlers.PLAYER_ENTERING_WORLD(self, ...)
 	end
 end
 
-function EventHandlers.UNIT_DISPLAYPOWER(self, arg1, ...)
-	if Healium_Units[arg1] then
-		for v,_  in pairs(Healium_Units[arg1]) do
-			HealiumUnitFrames_CheckPowerType(arg1, v)
-		end
-	end
+function EventHandlers.UNIT_DISPLAYPOWER(_, arg1)
+	ForEachUnitFrame(arg1, HealiumUnitFrames_CheckPowerType)
 end
 
 function EventHandlers.RAID_TARGET_UPDATE(self, ...)
 	for _, k in ipairs(Healium_Frames) do
-		if k.TargetUnit then
-			if UnitExists(k.TargetUnit) then
-				local index = GetRaidTargetIndex(k.TargetUnit)
-				if index then
-					SetRaidTargetIconTexture(k.raidTargetIcon, index)
-					k.raidTargetIcon:Show()
-				else
-					k.raidTargetIcon:Hide()
-				end
+		local unit = k.TargetUnit
+		if unit and UnitExists(unit) then
+			local index = GetRaidTargetIndex(unit)
+			if index then
+				SetRaidTargetIconTexture(k.raidTargetIcon, index)
+				k.raidTargetIcon:Show()
+			else
+				k.raidTargetIcon:Hide()
 			end
 		end
-	end	
+	end
 end
 
 function Healium_OnEvent(self, event, ...)

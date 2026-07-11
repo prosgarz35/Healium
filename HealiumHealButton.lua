@@ -6,28 +6,22 @@ end
 
 
 function Healium_HealButton_OnEnter(frame, motion)
-    GameTooltip:SetOwner(frame, "ANCHOR_RIGHT", -30, 5)
-    if (frame.id) then
-		if (not Healium.ShowToolTips) then return end	
+	if frame.id then
+		if not Healium.ShowToolTips then return end
 		GameTooltip_SetDefaultAnchor(GameTooltip, frame)
 		GameTooltip:SetSpell(frame.id, BOOKTYPE_SPELL)
 		local unit = frame:GetParent().TargetUnit
 		if not UnitExists(unit) then return end
 		local Name = UnitName(unit)
-		if (not Name) then Name = "-" end
-        GameTooltip:AddLine("Target: |cFF00FF00"..Name,1,1,1)
-
---		if (Debug) then 
---			local texture = frame.icon:GetTexture() or "(nil)"
---			GameTooltip:AddLine("ID= ".. frame.id .. "|nTexture=" .. texture) 
---		end
---        GameTooltip:AddLine(Healium_AddonColor.. "---- " .. Healium_AddonName .. " button ----",1,1,1)		  
-		GameTooltip:Show()		
+		if not Name then Name = "-" end
+		GameTooltip:AddLine("Target: |cFF00FF00" .. Name, 1, 1, 1)
+		GameTooltip:Show()
 	else
-		-- Safely Handle Empty Buttons	
+		-- Safely Handle Empty Buttons
+		GameTooltip:SetOwner(frame, "ANCHOR_RIGHT", -30, 5)
 		GameTooltip:SetText("|cFFFFFFFFNo Spell|n|cFF00FF00You may drag-and-drop a spell|nfrom your spellbook onto this button.")
-		GameTooltip:Show()		
-    end
+		GameTooltip:Show()
+	end
 end
 
 function Healium_HealButton_OnLeave()
@@ -113,10 +107,8 @@ end
 
 function Healium_HealButton_PostClick(self)
 	Healium_DebugPrint("Healium_HealButton_PostClick() called")
-
-	if self.dragspellid then
-		PickupSpell(self.dragspellid, BOOKTYPE_SPELL)
-		Drag(self)
-		self.dragspellid = nil
-	end
+	if not self.dragspellid then return end
+	PickupSpell(self.dragspellid, BOOKTYPE_SPELL)
+	Drag(self)
+	self.dragspellid = nil
 end
