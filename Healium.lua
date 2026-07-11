@@ -112,13 +112,21 @@ function Healium_Warn(msg)
 	DEFAULT_CHAT_FRAME:AddMessage("|CFFFF0000Warning|r: " .. tostring(msg))		
 end
 
-local _cachedProfile = nil
+-- Profile cache: indexed by talent group so switching specs is automatic
+-- and no explicit invalidation is needed.
+local _profileCache = {}
 
 function Healium_GetProfile()
-	if not _cachedProfile then
-		_cachedProfile = Healium.Profiles[GetActiveTalentGroup()]
+	local key = GetActiveTalentGroup()
+	if not _profileCache[key] then
+		_profileCache[key] = Healium.Profiles[key]
 	end
-	return _cachedProfile
+	return _profileCache[key]
+end
+
+-- Call this whenever Healium.Profiles is re-initialised (e.g. after ADDON_LOADED).
+local function Healium_InvalidateProfileCache()
+	_profileCache = {}
 end
 
 function Healium_OnLoad(self)
@@ -704,7 +712,7 @@ end
 
 function EventHandlers.PLAYER_REGEN_ENABLED(self, ...)
 	if self.pendingTalentUpdate then
-		_cachedProfile = nil
+		Healium_InvalidateProfileCache()
 		Healium_UpdateSpells()
 		Healium_UpdateButtons()
 		Healium_Update_ConfigPanel()
@@ -734,6 +742,7 @@ function EventHandlers.ADDON_LOADED(self, arg1, ...)
 		Healium_DebugPrint("ADDON_LOADED")  	
 
 		InitVariables()
+		Healium_InvalidateProfileCache()  -- Healium.Profiles was just (re)built
 		Healium_InitSpells(HealiumClass, HealiumRace) 		
 		Healium_CreateConfigPanel(HealiumClass, AddonVersion)
 		Healium_InitMenu()		
@@ -774,7 +783,7 @@ end
 function EventHandlers.PLAYER_TALENT_UPDATE(self, ...)
 	Healium_DebugPrint("PLAYER_TALENT_UPDATE")
 	self.Respecing = nil
-	_cachedProfile = nil  -- invalidate profile cache on spec change
+	Healium_InvalidateProfileCache()
 
 	if InCombatLockdown() then
 		self.pendingTalentUpdate = true
