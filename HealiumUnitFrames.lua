@@ -1,4 +1,3 @@
-
 local debuffTypesCache = {}
 
 local PartyFrame = nil
@@ -39,7 +38,6 @@ local function initialConfigFunction(frame)
 
 	if InCombatLockdown() then
 		frame.fixCreateButtons = true
-		table.insert(Healium_FixNameplates, frame)
 		Healium_DebugPrint("Unit Frame created during combat. Its buttons will not be available until combat ends.")
 	else
 		if (not Healium.ShowPercentage) then frame.HPText:Hide() end	
@@ -496,4 +494,3 @@ function Healium_ResetAllFramePositions()
 	end
 	Healium_Print("Reset frame positions complete.")
 end
-

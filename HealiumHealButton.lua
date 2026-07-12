@@ -30,7 +30,7 @@ function Healium_HealButton_OnEvent(self, event)
 	if (not self.id) then return end   
 
 	if event == "SPELL_UPDATE_USABLE" then
-		Healium_RangeCheckButton(self)
+		Healium_RangeCheckButton(self, self:GetParent().TargetUnit)
 	end
 end
 
@@ -74,7 +74,7 @@ local function Drag(self)
 end
 function Healium_HealButton_OnReceiveDrag(self)
 	Healium_DebugPrint("Healium_HealButton_OnReceiveDrag() called")
-	Drag(self, nil)
+	Drag(self)
 end
 function Healium_HealButton_OnDragStart(self)
 	if not IsShiftKeyDown() then return end

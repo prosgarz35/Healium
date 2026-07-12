@@ -12,6 +12,17 @@ local BOOKTYPE_SPELL   = BOOKTYPE_SPELL
 local LowHP = 0.6
 local VeryLowHP = 0.3
 local DefaultButtonCount = 5
+local wipe = wipe
+local UnitExists = UnitExists
+local UnitHealth = UnitHealth
+local UnitHealthMax = UnitHealthMax
+local UnitIsDeadOrGhost = UnitIsDeadOrGhost
+local InCombatLockdown = InCombatLockdown
+local pairs = pairs
+local ipairs = ipairs
+local math_max = math.max
+local math_min = math.min
+local math_floor = math.floor
 local ActivatePrimarySpecSpellName = GetSpellInfo(63645)
 local ActivateSecondarySpecSpellName = GetSpellInfo(63644)
 Healium = {
@@ -30,17 +41,15 @@ Healium = {
   EnableDebufHealthbarColoring = false,
   ShowMana = true,
 }
-HealiumGlobal = {
-}
+
 Healium_MaxButtons = 15
 Healium_AddonName = "Healium"
 Healium_AddonColor = "|cFF55AAFF"
 Healium_AddonColoredName = Healium_AddonColor .. Healium_AddonName .. "|r"
-Healium_Units = { { } }
+Healium_Units = { }
 Healium_Frames = { }
 Healium_ShownFrames = { }
 Healium_ButtonIDs = { }
-Healium_FixNameplates = { }
 
 local HealiumFrame = nil
 
@@ -139,14 +148,8 @@ function Healium_UpdateUnitHealth(UnitName, NamePlate)
 	local MaxHealth = math.max(1, UnitHealthMax(UnitName))
 	local isDead    = UnitIsDeadOrGhost(UnitName)
 
-	local HPPercent
-	if isDead then
-		HPPercent = 0
-		NamePlate.HPText:SetText("dead")
-	else
-		HPPercent = math.max(0, math.min(1, Health / MaxHealth))
-		NamePlate.HPText:SetText(math.floor(HPPercent * 100) .. "%")
-	end
+	local HPPercent = isDead and 0 or math_max(0, math_min(1, Health / MaxHealth))
+	NamePlate.HPText:SetText(isDead and "dead" or math_floor(HPPercent * 100) .. "%")
 
 	NamePlate.HealthBar:SetMinMaxValues(0, MaxHealth)
 	NamePlate.HealthBar:SetValue(isDead and 0 or Health)
@@ -316,7 +319,11 @@ end
 function Healium_UpdateButtonSpells()
 	local Profile = Healium_GetProfile()
 
-	Profile.SpellNamesHash = {}
+	if Profile.SpellNamesHash then
+		wipe(Profile.SpellNamesHash)
+	else
+		Profile.SpellNamesHash = {}
+	end
 
 	for i = 1, Healium_MaxButtons do
 		local spell = Profile.SpellNames[i]
@@ -387,7 +394,7 @@ function Healium_UpdateButtons()
 	Healium_UpdateButtonSpells()
 end
 
-function Healium_RangeCheckButton(button)
+function Healium_RangeCheckButton(button, targetUnit)
 	local id = button.id
 	if id then
 		local bookType = BOOKTYPE_SPELL
@@ -402,7 +409,7 @@ function Healium_RangeCheckButton(button)
 		end
 
 		if SpellHasRange(id, bookType) then
-			local inRange = IsSpellInRange(id, bookType, button:GetParent().TargetUnit)
+			local inRange = IsSpellInRange(id, bookType, targetUnit)
 			if (inRange == 0) or (inRange == nil) then
 				button.icon:SetVertexColor(1.0, 0.3, 0.3)
 			end
@@ -494,10 +501,9 @@ function EventHandlers.PLAYER_REGEN_ENABLED(self, ...)
 		self.pendingTalentUpdate = nil
 	end
 
-	for _,v in ipairs(Healium_FixNameplates) do
-		if (not Healium.ShowPercentage) then v.HPText:Hide() end		
-
+	for _,v in ipairs(Healium_Frames) do
 		if v.fixCreateButtons then 
+			if (not Healium.ShowPercentage) then v.HPText:Hide() end		
 			Healium_CreateButtonsForNameplate(v)
 			UpdateButtonVisibility(v)
 			v.fixCreateButtons = nil
@@ -508,8 +514,6 @@ function EventHandlers.PLAYER_REGEN_ENABLED(self, ...)
 			v.fixShowMana = nil
 		end
 	end
-
-	Healium_FixNameplates = {}
 end
 
 function EventHandlers.ADDON_LOADED(self, arg1, ...)
@@ -618,14 +622,19 @@ function Healium_OnUpdate(self, elapsed)
 	local Profile = Healium_GetProfile()
 	if not Profile or not Profile.ButtonCount then return end
 	local buttonCount = Profile.ButtonCount
+
 	if not RangeCheckFrames or RangeCheckPageIdx >= #RangeCheckFrames then
-		RangeCheckFrames  = {}
+		RangeCheckFrames = RangeCheckFrames or {}
+		wipe(RangeCheckFrames)
+		local count = 0
 		for frame in pairs(Healium_ShownFrames) do
-			RangeCheckFrames[#RangeCheckFrames + 1] = frame
+			count = count + 1
+			RangeCheckFrames[count] = frame
 		end
 		RangeCheckPageIdx = 0
 	end
-	local last = math.min(RangeCheckPageIdx + RangeCheckPageSize, #RangeCheckFrames)
+
+	local last = math_min(RangeCheckPageIdx + RangeCheckPageSize, #RangeCheckFrames)
 	for i = RangeCheckPageIdx + 1, last do
 		local frame = RangeCheckFrames[i]
 		if frame and frame.TargetUnit
@@ -634,11 +643,10 @@ function Healium_OnUpdate(self, elapsed)
 			for j = 1, buttonCount do
 				local button = frame.buttons[j]
 				if button and button:IsShown() then
-					Healium_RangeCheckButton(button)
+					Healium_RangeCheckButton(button, frame.TargetUnit)
 				end
 			end
 		end
 	end
 	RangeCheckPageIdx = last
 end
-
