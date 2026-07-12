@@ -6,19 +6,7 @@ local CanCureCurse   = false
 local Cures      = {}
 local CuresCount = 0
 
-local function AddSpell(spellID)
-	table.insert(Healium_Spell.Name, (GetSpellInfo(spellID)))
-end
-
 -- These spellIDs are from wowhead
-
-local ClassSpellsMap = {
-	DRUID   = { 774, 8936, 33763, 5185, 5375, 50464, 53248, 29166, 20484, 2782, 8946, 2893 },
-	PRIEST  = { 139, 2061, 2050, 2054, 2060, 32546, 596, 33076, 34861, 17, 552, 528, 527, 47788, 47540 },
-	SHAMAN  = { 8004, 331, 1064, 974, 526, 51886, 61295 },
-	PALADIN = { 19750, 635, 20473, 633, 1152, 4987, 1022, 1038, 1044, 53563, 53601 },
-	MAGE    = { 475 },
-}
 
 local CuresConfig = {
 	-- Druid
@@ -43,14 +31,7 @@ local CuresConfig = {
 	[475] = { CanCureCurse = true }, -- Remove Curse (Mage)
 }
 
-function Healium_InitSpells(class, race)
-	local spells = ClassSpellsMap[class]
-	if spells then
-		for _, spellID in ipairs(spells) do
-			AddSpell(spellID)
-		end
-	end
-
+function Healium_InitSpells()
 	-- Build the Cures lookup table and count entries in a single pass
 	for spellID, cureData in pairs(CuresConfig) do
 		local name = (GetSpellInfo(spellID))
@@ -58,10 +39,6 @@ function Healium_InitSpells(class, race)
 			Cures[name] = cureData
 			CuresCount  = CuresCount + 1
 		end
-	end
-
-	if race == "Draenei" then
-		AddSpell(59547) -- Gift of the Naaru
 	end
 end
 

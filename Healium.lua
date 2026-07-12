@@ -9,7 +9,7 @@ local AddonVersion = "|cFFFFFF00 1.0.2|r"
 
 -- fast locals for hot paths
 local GetSpellCooldown = GetSpellCooldown
-local GetSpellTexture  = GetSpellTexture
+
 local GetSpellBookItemName = GetSpellBookItemName
 local IsUsableSpell    = IsUsableSpell
 local SpellHasRange    = SpellHasRange
@@ -20,15 +20,11 @@ local BOOKTYPE_SPELL   = BOOKTYPE_SPELL
 -- Constants
 local LowHP = 0.6
 local VeryLowHP = 0.3
-local _, HealiumClass = UnitClass("player")
-local _, HealiumRace = UnitRace("player")
-
 local DefaultButtonCount = 5
 
 -- locale safe versions of respeccing spell names
 local ActivatePrimarySpecSpellName = GetSpellInfo(63645)
-local ActivateSecondarySpecSpellName = GetSpellInfo(63644) 
-
+local ActivateSecondarySpecSpellName = GetSpellInfo(63644)
 -- Healium holds per character settings
 Healium = {
   Scale = 1.0,									-- Scale of frames
@@ -73,17 +69,7 @@ Healium_ShownFrames = { } -- table of all shown "unit" frames.
 Healium_ButtonIDs = { } -- table of IDs that correspond to the selected spells, not persisted 
 Healium_FixNameplates = { } -- nameplates that need various updates when out of combat
 
---[[
-List of spells, icons for the spells, and IDs. 
-These only contain specifically selected spells in HealiumSpells.lua
-The Name gets filled in in Healium_InitSpells(). Healium_UpdateSpells() will fill in the ID and Icon if
-the player actually has the spell.
---]]
-Healium_Spell = {		
-  Name = {},
-  Icon = {},
-  ID = {}
-}
+
 
 local HealiumFrame = nil
 
@@ -298,24 +284,9 @@ local function GetSpellID(spell)
 	return nil, nil
 end
 
--- Reverse-lookup hash: spellName -> ID, rebuilt on SPELLS_CHANGED / PLAYER_ENTERING_WORLD
-local Healium_SpellByName = {}
-
--- Loops through Healium_Spell.Name[] and updates it's corresponding .ID[] and .Icon[]
 -- Warning UpdateSpells() is a global function from Blizzard. 
 local function Healium_UpdateSpells()
 	SpellCache = nil
-	Healium_SpellByName = {}
-	for k, v in ipairs(Healium_Spell.Name) do
-		Healium_Spell.ID[k] = GetSpellID(v)
-		if Healium_Spell.ID[k] then
-			Healium_Spell.Icon[k] = GetSpellTexture(Healium_Spell.ID[k], BOOKTYPE_SPELL)
-			Healium_SpellByName[v] = Healium_Spell.ID[k]  -- O(1) lookup
-		else
-			Healium_Spell.Icon[k] = nil
-		end
-	end
-
 	Healium_UpdateButtonSpells()
 end
 
@@ -400,14 +371,7 @@ function Healium_UpdateButtonSpells()
 
 		if spell and spell ~= "" then
 			Profile.SpellNamesHash[spell] = true
-
-			-- O(1) hash lookup instead of O(N) inner loop
-			id = Healium_SpellByName[spell]
-
-			-- Fallback for drag-and-dropped spells not in Healium_Spell list
-			if not id then
-				id = GetSpellID(spell)
-			end
+			id = GetSpellID(spell)
 		end
 
 		Healium_ButtonIDs[i] = id
@@ -619,7 +583,7 @@ function EventHandlers.ADDON_LOADED(self, arg1, ...)
 
 		InitVariables()
 		Healium_InvalidateProfileCache()  -- Healium.Profiles was just (re)built
-		Healium_InitSpells(HealiumClass, HealiumRace) 		
+		Healium_InitSpells() 		
 		Healium_CreateConfigPanel()
 		Healium_InitMenu()		
 		Healium_CreateUnitFrames()
