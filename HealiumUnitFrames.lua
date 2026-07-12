@@ -53,8 +53,6 @@ local function initialConfigFunction(frame)
 		Healium_CreateButtonsForNameplate(frame)			
 	end
 	
-	
---	Healium_DebugPrint("Inital Config")
 end
 
 local function CreateButton(ButtonName,ParentFrame,xoffset)
@@ -216,7 +214,9 @@ end
 function HealiumUnitFrames_ShowHideFrame(self, show)
 	if self == PartyFrame then
 		Healium.ShowPartyFrame = show
-		Healium_ShowPartyCheck:SetChecked(Healium.ShowPartyFrame)
+		if Healium_ShowPartyCheck then
+			Healium_ShowPartyCheck:SetChecked(Healium.ShowPartyFrame)
+		end
 		return
 	end
 
@@ -229,6 +229,7 @@ function HealiumUnitFrames_ShowHideFrame(self, show)
 		end
 	end
 end
+
 
 function HealiumUnitFrames_Button_OnLoad(self)
 	self:RegisterForDrag("RightButton")
@@ -390,7 +391,7 @@ function Healium_HideAllRaidFrames()
 	end
 end
 
--- Removed: Healium_ShowAllRaidFramesWithMembers was an empty stub
+
 		
 function Healium_Show10ManRaidFrames()
 	GroupFrames[1]:Show()
@@ -521,22 +522,8 @@ function Healium_UpdateUnitBuffs(unit, frame)
 	end
 end
 
-function Healium_UpdateEnableDebuffs()
-	for _, j in ipairs(Healium_Frames) do
-		if j.hasDebuf then
-			j.CurseBar:SetAlpha(0)
-			j.hasDebuf = nil
 
-			for i = 1, Healium_MaxButtons do
-				local button = j.buttons[i]
-				if button and button.CurseBar then
-					button.CurseBar:SetAlpha(0)
-					button.CurseBar.hasDebuf = nil
-				end
-			end
-		end
-	end
-end
+
 
 function Healium_HealthStatusBar_OnLoad(self)
 	-- This is done to ensure the status bar doesn't block 
@@ -546,11 +533,9 @@ function Healium_HealthStatusBar_OnLoad(self)
 end
 
 function Healium_ManaStatusBar_OnLoad(self)
---    self:SetStatusBarColor(PowerBarColor["MANA"])
 	self:SetRotatesTexture(true)
 	self:SetOrientation("VERTICAL")
 	self:SetFrameLevel(self:GetFrameLevel() - 1)
---	self:SetBackdropColor(1.0, 0.0, 0.0)	
 end
 
 

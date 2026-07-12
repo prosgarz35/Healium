@@ -1,4 +1,4 @@
--- Healium - Maintained by Engy of Area 52.  Based on FB Healbox by Dourd of Argent Dawn EU
+-- Healium
 --
 -- Programming notes
 -- WARNING In LUA all logical operators consider false and nil as false and anything else as true.  This means not 0 is false!!!!!!!!
@@ -20,10 +20,8 @@ local BOOKTYPE_SPELL   = BOOKTYPE_SPELL
 -- Constants
 local LowHP = 0.6
 local VeryLowHP = 0.3
-local NamePlateWidth = 120
 local _, HealiumClass = UnitClass("player")
 local _, HealiumRace = UnitRace("player")
-local MaxParty = 5 -- Max number of people in party
 
 local DefaultButtonCount = 5
 
@@ -37,16 +35,15 @@ Healium = {
   ShowToolTips = true,							-- Whether or not to display a tooltip for the spell when hovering over buttons
   ShowPercentage = true,						-- Whether or not to display the health percentage
   UseClassColors = false,						-- Whether or not to color the healthbar the color of the class instead of green/yellow/red
-  ShowDefaultPartyFrames = false,				-- Whether or not to show the default party frames
   ShowPartyFrame = true,						-- Whether or not to show the party frame
   ShowGroupFrames = { },  						-- Whether or not to show individual group frame
   HideCloseButton = false,						-- Whether or not to hide the close (X) button, to prevent accidental closing of the Healium Frame
   HideCaptions = false,							-- Whether or not to hide the caption when the mouse leaves the caption area
   LockFrames = false,							-- Whether or not to prevent dragging of the frame
-  EnableDebufs = true,							-- Whether or not to enable the debuf warning system
-  EnableDebufHealthbarHighlighting = true,		-- Whether or not to highlight the healthbar of a player when they have a debuf which you can cure
-  EnableDebufButtonHighlighting = true,			-- Whether or not to highlight buttons which are assigned a spell that can cure a debuff on a player
-  EnableDebufHealthbarColoring = false,			-- Whether or not to color the heatlhbar of a player when they have a debuf which you can cure
+  EnableDebufs = true,							-- Debuff warning system: always enabled
+  EnableDebufHealthbarHighlighting = true,		-- Healthbar highlight on debuff: always enabled
+  EnableDebufButtonHighlighting = true,			-- Button highlight on debuff: always enabled
+  EnableDebufHealthbarColoring = false,			-- Healthbar coloring on debuff: disabled by default
   ShowMana = true,								-- Whether or not to show mana
 }
 
@@ -68,7 +65,6 @@ Healium_MaxButtons = 15		-- Max Possible buttons
 Healium_AddonName = "Healium"
 Healium_AddonColor = "|cFF55AAFF"
 Healium_AddonColoredName = Healium_AddonColor .. Healium_AddonName .. "|r"
-Healium_MaxClassSpells = 20 -- For now this is manually set to the max number of class specific spells in Healium_Spell.Name which currently is priest
 
 
 -- NEW FRAMES VARIABLES
@@ -535,12 +531,10 @@ local function InitVariables()
 	if H.ShowGroupFrames == nil then H.ShowGroupFrames = {} end
 
 	local DEFAULTS = {
-		RaidScale                        = 1.0,
 		ShowToolTips                     = true,
 		ShowMana                         = true,
 		ShowPercentage                   = true,
 		UseClassColors                   = false,
-		ShowDefaultPartyFrames           = false,
 		ShowPartyFrame                   = true,
 		HideCloseButton                  = false,
 		HideCaptions                     = false,
@@ -639,7 +633,7 @@ function EventHandlers.ADDON_LOADED(self, arg1, ...)
 		InitVariables()
 		Healium_InvalidateProfileCache()  -- Healium.Profiles was just (re)built
 		Healium_InitSpells(HealiumClass, HealiumRace) 		
-		Healium_CreateConfigPanel(HealiumClass, AddonVersion)
+		Healium_CreateConfigPanel()
 		Healium_InitMenu()		
 		Healium_CreateUnitFrames()
 		Healium_SetScale()		
