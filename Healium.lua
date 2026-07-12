@@ -66,23 +66,12 @@ Healium_AddonName = "Healium"
 Healium_AddonColor = "|cFF55AAFF"
 Healium_AddonColoredName = Healium_AddonColor .. Healium_AddonName .. "|r"
 
-
 -- NEW FRAMES VARIABLES
 Healium_Units = { { } } -- table of tables that maps unit names to their frame, used for efficient handling of UNIT_HEALTH so each button doesn't get a UNIT_HEALTH event for every unit.
 Healium_Frames = { } -- table of all created "unit" frames.  Can access buttons from each of these.
 Healium_ShownFrames = { } -- table of all shown "unit" frames.
 Healium_ButtonIDs = { } -- table of IDs that correspond to the selected spells, not persisted 
 Healium_FixNameplates = { } -- nameplates that need various updates when out of combat
-
-
---[[
-Healium_DefaultButtons = { 
-	1 = {}
-	2 = {}
-	3 = {}
-	4 = {}
-} 
---]]
 
 --[[
 List of spells, icons for the spells, and IDs. 
@@ -330,7 +319,6 @@ local function Healium_UpdateSpells()
 	Healium_UpdateButtonSpells()
 end
 
-
 -- Efficient cooldowns
 function Healium_UpdateButtonCooldownsByColumn(column)
 	if Healium_ButtonIDs[column] then
@@ -548,7 +536,6 @@ local function InitVariables()
 		if H[key] == nil then H[key] = default end
 	end
 
-
 	-- Migrate profiles from the old per-character SavedVariable format.
 	if H.Profiles == nil then
 		if HealiumDropDownButton ~= nil and HealiumDropDownButtonIcon ~= nil and H.ButtonCount ~= nil then
@@ -762,5 +749,4 @@ function Healium_OnUpdate(self, elapsed)
 	end
 	RangeCheckPageIdx = last
 end
-
 

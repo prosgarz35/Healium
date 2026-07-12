@@ -4,7 +4,6 @@ function Healium_HealButton_OnLoad(self)
 	self:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 end
 
-
 function Healium_HealButton_OnEnter(frame, motion)
 	if frame.id then
 		if not Healium.ShowToolTips then return end
@@ -29,7 +28,7 @@ function Healium_HealButton_OnLeave()
 end
 
 function Healium_HealButton_OnEvent(self, event)
-	if (not self.id) then return 0 end   
+	if (not self.id) then return end   
 	
 	if event == "SPELL_UPDATE_USABLE" then
 		Healium_RangeCheckButton(self)

@@ -12,7 +12,6 @@ local xSpacing = 2
 local NamePlateHeight = 28
 local UnitFrames = { } -- table of all unit frames
 
-
 local FrameSet = {}  -- hash set for O(1) duplicate detection
 
 local function initialConfigFunction(frame)
@@ -131,8 +130,6 @@ local function CreateUnitFrame(FrameName, Caption, IsPet, Group)
 	return uf
 end
 
-
-
 local function CreateGroupHeader(FrameName, ParentFrame, Group)
 	local h = CreateHeader("SecureGroupHeaderTemplate", FrameName, ParentFrame)
 	h:SetAttribute("groupFilter", Group)	
@@ -141,8 +138,6 @@ local function CreateGroupHeader(FrameName, ParentFrame, Group)
 	return h
 end
 
-
-
 local function CreatePartyHeader(FrameName, ParentFrame)
 	local h = CreateHeader("SecureGroupHeaderTemplate", FrameName, ParentFrame)
 	h:SetAttribute("showSolo", "true")		
@@ -150,17 +145,11 @@ local function CreatePartyHeader(FrameName, ParentFrame)
 	return h
 end
 
-
-
 local function CreateGroupUnitFrame(FrameName, Caption, Group)
 	local uf = CreateUnitFrame(FrameName, Caption)
 	local h = CreateGroupHeader(FrameName .. "_Header", uf, Group)
 	return uf
 end
-
-
-
-
 
 local function CreatePartyUnitFrame(FrameName, Caption)
 	local uf = CreateUnitFrame(FrameName, Caption)
@@ -229,7 +218,6 @@ function HealiumUnitFrames_ShowHideFrame(self, show)
 		end
 	end
 end
-
 
 function HealiumUnitFrames_Button_OnLoad(self)
 	self:RegisterForDrag("RightButton")
@@ -391,7 +379,6 @@ function Healium_HideAllRaidFrames()
 	end
 end
 
-
 		
 function Healium_Show10ManRaidFrames()
 	GroupFrames[1]:Show()
@@ -425,7 +412,6 @@ function Healium_CreateUnitFrames()
 	end	
 	
 end
-
 
 function Healium_SetScale()
 	local Scale = Healium.Scale
@@ -522,9 +508,6 @@ function Healium_UpdateUnitBuffs(unit, frame)
 	end
 end
 
-
-
-
 function Healium_HealthStatusBar_OnLoad(self)
 	-- This is done to ensure the status bar doesn't block 
 	-- the name text
@@ -538,7 +521,6 @@ function Healium_ManaStatusBar_OnLoad(self)
 	self:SetFrameLevel(self:GetFrameLevel() - 1)
 end
 
-
 function Healium_ResetAllFramePositions()
 	for _, k in ipairs(UnitFrames) do
 		k:SetUserPlaced(false)
@@ -547,5 +529,4 @@ function Healium_ResetAllFramePositions()
 	end
 	Healium_Print("Reset frame positions complete.")
 end
-
 
