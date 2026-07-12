@@ -1,4 +1,4 @@
--- Unit Frames Code
+
 local debuffTypesCache = {}
 
 local PartyFrame = nil
@@ -10,25 +10,19 @@ local GroupFramesWasShown = { }
 local MaxBuffs = 6
 local xSpacing = 2
 local NamePlateHeight = 28
-local UnitFrames = { } -- table of all unit frames
+local UnitFrames = { }
 
-local FrameSet = {}  -- hash set for O(1) duplicate detection
+local FrameSet = {}
 
 local function initialConfigFunction(frame)
-	-- The only thing you are especially allowed to do in the initialConfigFunction() is to change attributes.  
-	-- CreateFrame(), :Show(), :Hide() etc will taint in combat still
 
 	frame.buttons = { }
 	frame:RegisterForClicks("AnyUp")	
 	frame:SetAttribute("type1", "target")
-
-	-- O(1) duplicate check via hash set instead of linear scan
 	if not FrameSet[frame] then
 		FrameSet[frame] = true
 		table.insert(Healium_Frames, frame)
 	end
-
-	-- configure buff frames
 	frame.buffs = { }	
 
 	local framename = frame:GetName()
@@ -51,7 +45,7 @@ local function initialConfigFunction(frame)
 		if (not Healium.ShowPercentage) then frame.HPText:Hide() end	
 		Healium_CreateButtonsForNameplate(frame)			
 	end
-	
+
 end
 
 local function CreateButton(ButtonName,ParentFrame,xoffset)
@@ -59,12 +53,10 @@ local function CreateButton(ButtonName,ParentFrame,xoffset)
 	button:SetPoint("LEFT", ParentFrame, "RIGHT", xoffset, 0)
 	return button
 end
-
--- please make sure we are not in combat before calling this function
 function Healium_CreateButtonsForNameplate(frame)
 	local x = xSpacing
 	local Profile = Healium_GetProfile()
-	
+
 	for i = 1, Healium_MaxButtons do
 		local name = frame:GetName()
 		local button = CreateButton(name.."_Heal"..i, frame, x)
@@ -89,7 +81,7 @@ end
 
 local function SetHeaderAttributes(frame)
 	frame.initialConfigFunction = initialConfigFunction
-	
+
 	frame:SetAttribute("showPlayer", "true")
 	frame:SetAttribute("maxColumns", 1)
 	frame:SetAttribute("columnAnchorPoint", "LEFT")
@@ -183,9 +175,8 @@ function HealiumUnitFrames_OnMouseDown(self, button)
 	if button == "LeftButton" and not Healium.LockFrames then
 		self:StartMoving()	
 	end
-	
+
 	if button == "RightButton" then
-		-- Добавлена проверка на бой для предотвращения ошибки UIDropDownMenu Taint
 		if not InCombatLockdown() then
 			ToggleDropDownMenu(1, nil, HealiumMenu, self, 0, 0)	
 		else
@@ -238,8 +229,6 @@ function HealiumUnitFrames_CheckPowerType(UnitName, NamePlate)
 	end
 	return true
 end
-
--- Shared initialiser called by both OnShow and OnAttributeChanged
 local function InitUnitFrameForUnit(self, unit)
 	self.TargetUnit = unit
 	if not Healium_Units[unit] then Healium_Units[unit] = {} end
@@ -259,8 +248,6 @@ function HealiumUnitFrames_Button_OnShow(self)
 	if not unit then return end
 
 	InitUnitFrameForUnit(self, unit)
-
-	-- Update cooldowns for all visible buttons
 	local buttonCount = Healium_GetProfile().ButtonCount
 	for i = 1, buttonCount do
 		local button = self.buttons[i]
@@ -272,8 +259,6 @@ function HealiumUnitFrames_Button_OnShow(self)
 			end
 		end
 	end
-
-	-- Link buff frames to unit
 	for i = 1, MaxBuffs do
 		self.buffs[i].unit = unit
 	end
@@ -282,7 +267,7 @@ end
 function HealiumUnitFrames_Button_OnHide(self)
 
 	Healium_ShownFrames[self] = nil
-	
+
 	local parent = self:GetParent():GetParent()
 	if parent.childismoving then
 		parent:StopMovingOrSizing()		
@@ -308,8 +293,6 @@ end
 
 function HealiumUnitFrames_Button_OnAttributeChanged(self, name, value)
 	if name ~= "unit" or value == self.TargetUnit then return end
-
-	-- Remove old binding
 	if self.TargetUnit and Healium_Units[self.TargetUnit] then
 		Healium_Units[self.TargetUnit][self] = nil
 	end
@@ -379,7 +362,6 @@ function Healium_HideAllRaidFrames()
 	end
 end
 
-		
 function Healium_Show10ManRaidFrames()
 	GroupFrames[1]:Show()
 	GroupFrames[2]:Show()
@@ -403,21 +385,19 @@ function Healium_CreateUnitFrames()
 	if Healium.ShowPartyFrame then
 		PartyFrame:Show()
 	end
-	
-	-- Disabled Pets, Me, Friends, and Tanks frame creation
-	
+
 	for i = 1, 8 do
 		GroupFrames[i] = CreateGroupUnitFrame("HealiumGroup" .. i .. "Frame", "Group " .. i, tostring(i))
 		GroupFramesWasShown[i] = false
 	end	
-	
+
 end
 
 function Healium_SetScale()
 	local Scale = Healium.Scale
-	
+
 	PartyFrame:SetScale(Scale)
-	
+
 	for i,j in ipairs(GroupFrames) do
 		j:SetScale(Scale)
 	end	
@@ -426,11 +406,9 @@ end
 function Healium_UpdateUnitBuffs(unit, frame)
 	local buffIndex = 1
 	local Profile = Healium_GetProfile()
-	
+
 	if Profile.SpellNamesHash then
-		-- WotLK max player buffs = 32; bounded loop prevents hang on broken API
 		for i = 1, 32 do
-			-- Фильтр "PLAYER" для игнорирования чужих аур в рейде
 			local name, _, icon, count, _, duration, expirationTime = UnitBuff(unit, i, "PLAYER")
 			if not name then break end
 
@@ -446,8 +424,6 @@ function Healium_UpdateUnitBuffs(unit, frame)
 				else
 					buffFrame.count:Hide()
 				end
-
-				-- duration already confirmed > 0 in outer if
 				local startTime = expirationTime - duration
 				buffFrame.cooldown:SetCooldown(startTime, duration)
 				buffFrame.cooldown:Show()
@@ -458,20 +434,13 @@ function Healium_UpdateUnitBuffs(unit, frame)
 			end
 		end
 	end
-
-	-- Скрываем оставшиеся фреймы
 	for i = buffIndex, MaxBuffs do
 		frame.buffs[i]:Hide()
 	end
-	
-	-- Обработка дебаффов
 	if Healium.EnableDebufs then
 		local foundDebuff = false
 		table.wipe(debuffTypesCache)
-
-		-- WotLK max debuffs = 40; bounded loop prevents hang on broken API
 		for i = 1, 40 do
-			-- Убраны неиспользуемые возвращаемые значения (заменены на _)
 			local name, _, _, _, debuffType = UnitDebuff(unit, i)
 			if not name then break end
 
@@ -488,7 +457,7 @@ function Healium_UpdateUnitBuffs(unit, frame)
 				end
 			end
 		end
-		
+
 		local debuffStateChanged = false
 		if (not foundDebuff) and frame.hasDebuf then
 			frame.CurseBar:SetAlpha(0)
@@ -497,11 +466,11 @@ function Healium_UpdateUnitBuffs(unit, frame)
 		elseif foundDebuff then
 			debuffStateChanged = true
 		end
-		
+
 		if Healium.EnableDebufButtonHighlighting then 
 			Healium_ShowDebuffButtons(Profile, frame, debuffTypesCache)		
 		end
-		
+
 		if debuffStateChanged and Healium.EnableDebufHealthbarColoring then
 			Healium_UpdateUnitHealth(unit, frame)
 		end
@@ -509,8 +478,6 @@ function Healium_UpdateUnitBuffs(unit, frame)
 end
 
 function Healium_HealthStatusBar_OnLoad(self)
-	-- This is done to ensure the status bar doesn't block 
-	-- the name text
 	self:SetFrameLevel(self:GetFrameLevel() - 1)
 
 end

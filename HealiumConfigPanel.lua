@@ -1,9 +1,4 @@
 
-
--- Factory: creates a labelled checkbox anchored relative to another frame.
--- anchor  : parent frame to anchor BOTTOMLEFT → TOPLEFT; pass nil to position manually after.
--- offsetX : horizontal offset from anchor (default 0)
--- offsetY : vertical offset from anchor (default 0)
 local function CreateOptionCheckButton(parent, anchor, label, tooltip, onClick, offsetX, offsetY)
 	local cb = CreateFrame("CheckButton", nil, parent, "OptionsCheckButtonTemplate")
 	if anchor then
@@ -16,8 +11,6 @@ local function CreateOptionCheckButton(parent, anchor, label, tooltip, onClick, 
 	cb:SetScript("OnClick", onClick)
 	return cb
 end
-
--- Factory: creates a configured slider
 local function CreateOptionSlider(name, parent, width, min, max, step, initialValue, lowText, highText, tooltip, onValueChanged)
 	local slider = CreateFrame("Slider", name, parent, "OptionsSliderTemplate")
 	slider:SetWidth(width)
@@ -26,18 +19,16 @@ local function CreateOptionSlider(name, parent, width, min, max, step, initialVa
 	slider:SetValueStep(step)
 	slider:SetValue(initialValue)
 	slider.tooltipText = tooltip
-	
+
 	slider.Text = slider:CreateFontString(nil, "BACKGROUND", "GameFontNormalLarge")
 	slider.Text:SetPoint("CENTER", 0, 17)
-	
+
 	_G[slider:GetName() .. "Low"]:SetText(lowText)
 	_G[slider:GetName() .. "High"]:SetText(highText)
-	
+
 	slider:SetScript("OnValueChanged", onValueChanged)
 	return slider
 end
-
--- ── Handler functions ────────────────────────────────────────────────────────
 
 function Healium_SetButtonCount(count)
 	HealiumMaxButtonSlider.Text:SetText("Show |cFFFFFFFF" .. count .. "|r Buttons")
@@ -88,8 +79,6 @@ local function ScaleSlider_OnValueChanged(self)
 	self.Text:SetText("Scale: |cFFFFFFFF" .. format("%.1f", Healium.Scale))
 end
 
--- ── Public API ───────────────────────────────────────────────────────────────
-
 function Healium_ShowConfigPanel()
 	if InterfaceOptionsFrame:IsVisible() then
 		InterfaceOptionsFrame:Hide()
@@ -130,8 +119,6 @@ function Healium_CreateConfigPanel()
 	scrollchild:SetHeight(frameheight - 45)
 	scrollchild:SetWidth(framewidth - 45)
 	scrollchild:Show()
-
-	-- ── Checkboxes (via factory) ──────────────────────────────────────────────
 	local TooltipsCheck = CreateOptionCheckButton(scrollchild, nil,
 		"Show Button ToolTips",
 		"Shows spell tooltips when hovering the mouse over the " .. Healium_AddonColoredName .. " buttons.",
@@ -165,22 +152,16 @@ function Healium_CreateConfigPanel()
 		"Lock Frame Positions",
 		"Prevents dragging of any " .. Healium_AddonColoredName .. " frames.",
 		LockFramePositionsCheck_OnClick)
-
-	-- ── Button count slider ───────────────────────────────────────────────────
 	HealiumMaxButtonSlider = CreateOptionSlider("$parentMaxButtonSlider", scrollchild, 128, 0, Healium_MaxButtons, 1, 
 		Healium_GetProfile().ButtonCount, "0", Healium_MaxButtons, 
 		"How many " .. Healium_AddonColoredName .. " buttons to show.", MaxButtonSlider_Update)
 	HealiumMaxButtonSlider:SetPoint("TOPLEFT", 220, -50)
 	HealiumMaxButtonSlider.Text:SetText("Show |cFFFFFFFF" .. HealiumMaxButtonSlider:GetValue() .. "|r Buttons")
-
-	-- ── Scale slider ─────────────────────────────────────────────────────────
 	local ScaleSlider = CreateOptionSlider("HealiumScaleSlider", scrollchild, 100, 0.6, 1.5, 0.1, 
 		Healium.Scale, "Small", "Large", 
 		"Sets the scale of all " .. Healium_AddonColoredName .. " frames.", ScaleSlider_OnValueChanged)
 	ScaleSlider:SetPoint("TOPLEFT", HealiumMaxButtonSlider, "BOTTOMLEFT", 0, -30)
 	ScaleSlider.Text:SetText("Scale: |cFFFFFFFF" .. format("%.1f", ScaleSlider:GetValue()))
-
-	-- Party check (global, referenced from HealiumUnitFrames.lua)
 	Healium_ShowPartyCheck = CreateOptionCheckButton(scrollchild, LockFramePositionsCheck,
 		"Party",
 		"Shows the Party " .. Healium_AddonColoredName .. " frame.",
@@ -189,8 +170,6 @@ function Healium_CreateConfigPanel()
 			Healium_ShowHidePartyFrame()
 		end,
 		0, -30)
-
-	-- Group checkboxes; stored in _G so HealiumUnitFrames can find them by name
 	local prevCheck = Healium_ShowPartyCheck
 	for i = 1, 8 do
 		local check = CreateOptionCheckButton(scrollchild, prevCheck,
@@ -203,9 +182,6 @@ function Healium_CreateConfigPanel()
 		_G["Healium_ShowGroup" .. i .. "Check"] = check
 		prevCheck = check
 	end
-	-- prevCheck now holds the Group 8 checkbox (used as anchor below)
-
-	-- ── Apply saved values ────────────────────────────────────────────────────
 	Healium_Update_ConfigPanel()
 
 	TooltipsCheck:SetChecked(Healium.ShowToolTips)

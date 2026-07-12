@@ -16,7 +16,6 @@ function Healium_HealButton_OnEnter(frame, motion)
 		GameTooltip:AddLine("Target: |cFF00FF00" .. Name, 1, 1, 1)
 		GameTooltip:Show()
 	else
-		-- Safely Handle Empty Buttons
 		GameTooltip:SetOwner(frame, "ANCHOR_RIGHT", -30, 5)
 		GameTooltip:SetText("|cFFFFFFFFNo Spell|n|cFF00FF00You may drag-and-drop a spell|nfrom your spellbook onto this button.")
 		GameTooltip:Show()
@@ -29,7 +28,7 @@ end
 
 function Healium_HealButton_OnEvent(self, event)
 	if (not self.id) then return end   
-	
+
 	if event == "SPELL_UPDATE_USABLE" then
 		Healium_RangeCheckButton(self)
 	end
@@ -43,7 +42,7 @@ local function Drag(self)
 				Healium_Warn("Can't update button while in combat")
 				return
 			end
-			
+
 			if (self.index > 0) and (self.index <= Healium_MaxButtons) then
 				local spellName = GetSpellBookItemName(info1, BOOKTYPE_SPELL )		
 				if IsPassiveSpell(info1, BOOKTYPE_SPELL) then
@@ -56,14 +55,12 @@ local function Drag(self)
 				local OldSpellName = Profile.SpellNames[self.index]
 				Profile.SpellNames[self.index] = name
 				Profile.SpellIcons[self.index] = icon
-				
+
 				Healium_UpdateButtonSpells()
 				Healium_UpdateButtonIcons()				
 				Healium_UpdateButtonCooldownsByColumn(self.index)	
-				
-				ClearCursor()
 
-				-- if shift is held down put old spell on cursor
+				ClearCursor()
 				if IsShiftKeyDown() and (OldSpellName ~= nil) then
 					PickupSpell(OldSpellName)
 				end
@@ -74,20 +71,16 @@ local function Drag(self)
 	else
 		Healium_DebugPrint("Button received a drag but did not have a spell")
 	end
-end 
--- drag stop
+end
 function Healium_HealButton_OnReceiveDrag(self)
 	Healium_DebugPrint("Healium_HealButton_OnReceiveDrag() called")
 	Drag(self, nil)
 end
-
--- drag start
 function Healium_HealButton_OnDragStart(self)
-	-- starting drag requires shift to be pressed
 	if not IsShiftKeyDown() then return end
-	
+
 	local Profile = Healium_GetProfile()
-	
+
 	if (self.index > 0) and (self.index <= Healium_MaxButtons) then	
 		PickupSpell(Profile.SpellNames[self.index])
 	end

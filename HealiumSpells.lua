@@ -6,33 +6,21 @@ local CanCureCurse   = false
 local Cures      = {}
 local CuresCount = 0
 
--- These spellIDs are from wowhead
-
 local CuresConfig = {
-	-- Druid
-	[2782] = { CanCureCurse = true },  -- Remove Curse (Druid)
-	[2893] = { CanCurePoison = true }, -- Abolish Poison
-	[8946] = { CanCurePoison = true }, -- Cure Poison
-
-	-- Priest
-	[552] = { CanCureDisease = true }, -- Abolish Disease
-	[528] = { CanCureDisease = true }, -- Cure Disease
-	[527] = { CanCureMagic = true },   -- Dispel Magic
-
-	-- Shaman
-	[526]   = { CanCurePoison = true, CanCureDisease = true },                        -- Cure Toxins
-	[51886] = { CanCurePoison = true, CanCureDisease = true, CanCureCurse = true },   -- Cleanse Spirit
-
-	-- Paladin
-	[1152] = { CanCurePoison = true, CanCureDisease = true },                         -- Purify
-	[4987] = { CanCurePoison = true, CanCureDisease = true, CanCureMagic = true },    -- Cleanse
-
-	-- Mage
-	[475] = { CanCureCurse = true }, -- Remove Curse (Mage)
+	[2782] = { CanCureCurse = true },
+	[2893] = { CanCurePoison = true },
+	[8946] = { CanCurePoison = true },
+	[552] = { CanCureDisease = true },
+	[528] = { CanCureDisease = true },
+	[527] = { CanCureMagic = true },
+	[526]   = { CanCurePoison = true, CanCureDisease = true },
+	[51886] = { CanCurePoison = true, CanCureDisease = true, CanCureCurse = true },
+	[1152] = { CanCurePoison = true, CanCureDisease = true },
+	[4987] = { CanCurePoison = true, CanCureDisease = true, CanCureMagic = true },
+	[475] = { CanCureCurse = true },
 }
 
 function Healium_InitSpells()
-	-- Build the Cures lookup table and count entries in a single pass
 	for spellID, cureData in pairs(CuresConfig) do
 		local name = (GetSpellInfo(spellID))
 		if name then
@@ -62,16 +50,12 @@ function Healium_UpdateCures()
 		end
 	end
 end
-
--- debuffType is expected to be a return value from the wow api UnitDebuff()
 function Healium_CanCureDebuff(debuffType)
 	return (debuffType == "Curse"   and CanCureCurse)   or
 	       (debuffType == "Disease" and CanCureDisease)  or
 	       (debuffType == "Magic"   and CanCureMagic)    or
 	       (debuffType == "Poison"  and CanCurePoison)
 end
-
--- Priority order for debuff-type matching (first match wins)
 local DEBUFF_PRIORITY = { "Curse", "Disease", "Magic", "Poison" }
 local CURE_FLAG = {
 	Curse   = "CanCureCurse",

@@ -5,8 +5,6 @@ local function SetButtonCount(info, arg1)
 	end
 	Healium_SetButtonCount(arg1)
 end
-
--- Static part of the menu - built once, not on every RightClick
 local MenuTable = {
 	[1] =
 	{
@@ -78,8 +76,6 @@ local MenuTable = {
 
 local function HealiumMenu_InitializeDropDown(self, level)
 	level = level or 1
-
-	-- Close button attached here so self.HideMenu is always valid
 	if level == 1 then
 		local closeEntry = MenuTable[1][6]
 		if not closeEntry then
@@ -94,8 +90,6 @@ local function HealiumMenu_InitializeDropDown(self, level)
 			closeEntry.func = self.HideMenu
 		end
 	end
-
-	-- Rebuild only the dynamic "Set button count" submenu on each open
 	local Profile = Healium_GetProfile()
 	local sbc = {}
 	for i = 0, Healium_MaxButtons do
