@@ -18,6 +18,7 @@ local CuresConfig = {
 	[1152] = { CanCurePoison = true, CanCureDisease = true },
 	[4987] = { CanCurePoison = true, CanCureDisease = true, CanCureMagic = true },
 	[475] = { CanCureCurse = true },
+	[520869] = { CanCurePoison = true, CanCureDisease = true }, -- Starcaller диспел
 }
 
 function Healium_InitSpells()
