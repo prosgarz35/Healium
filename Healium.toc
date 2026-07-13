@@ -12,6 +12,5 @@ HealiumSpells.lua
 HealiumConfigPanel.lua
 Healium.lua
 HealiumMenu.lua
-Healium.xml
 HealiumUnitFrames.xml
 HealiumUnitFrames.lua

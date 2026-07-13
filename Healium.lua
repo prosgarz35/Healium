@@ -78,6 +78,7 @@ end
 
 function Healium_GetProfile()
 	local key = GetActiveTalentGroup()
+	if key == nil then key = 1 end
 	if not _profileCache[key] then
 		local saved = Healium.Profiles and Healium.Profiles[key]
 		if saved then
@@ -177,10 +178,10 @@ end
 
 function Healium_UpdateShowMana()
 	if Healium.ShowMana then
-		HealiumFrame:RegisterEvent("UNIT_MANA")
+		HealiumFrame:RegisterEvent("UNIT_POWER")
 		HealiumFrame:RegisterEvent("UNIT_DISPLAYPOWER")		
 	else
-		HealiumFrame:UnregisterEvent("UNIT_MANA")	
+		HealiumFrame:UnregisterEvent("UNIT_POWER")	
 		HealiumFrame:UnregisterEvent("UNIT_DISPLAYPOWER")				
 	end
 
@@ -417,15 +418,7 @@ function Healium_RangeCheckButton(button, targetUnit)
 	end
 end
 
-local function CopyFlatTable(src)
-	local dest = {}
-	if src then
-		for k, v in pairs(src) do
-			dest[k] = v
-		end
-	end
-	return dest
-end
+
 local function InitVariables()
 	local H = Healium
 	if H.ShowGroupFrames == nil then H.ShowGroupFrames = {} end
@@ -448,17 +441,7 @@ local function InitVariables()
 		if H[key] == nil then H[key] = default end
 	end
 	if H.Profiles == nil then
-		if HealiumDropDownButton ~= nil and HealiumDropDownButtonIcon ~= nil and H.ButtonCount ~= nil then
-			Healium_Print("Importing button profiles.")
-			Healium_Print(Healium_AddonColor .. Healium_AddonName .. "|r now has separate button configurations for each talent specialization.")
-			Healium_Print("Both " .. Healium_AddonColor .. Healium_AddonName .. "|r button configurations will be set to your current button configuration.")
-			H.Profiles = {
-				[1] = { ButtonCount = H.ButtonCount, SpellNames = CopyFlatTable(HealiumDropDownButton), SpellIcons = CopyFlatTable(HealiumDropDownButtonIcon), SpellNamesHash = {} },
-				[2] = { ButtonCount = H.ButtonCount, SpellNames = CopyFlatTable(HealiumDropDownButton), SpellIcons = CopyFlatTable(HealiumDropDownButtonIcon), SpellNamesHash = {} },
-			}
-		else
-			H.Profiles = {}
-		end
+		H.Profiles = {}
 	end
 
 	if type(H.Profiles[1]) ~= "table" then H.Profiles[1] = CreateDefaultProfile() end
@@ -480,7 +463,7 @@ function EventHandlers.UNIT_HEALTH(_, arg1)
 	ForEachUnitFrame(arg1, Healium_UpdateUnitHealth)
 end
 
-function EventHandlers.UNIT_MANA(_, arg1)
+function EventHandlers.UNIT_POWER(_, arg1)
 	ForEachUnitFrame(arg1, Healium_UpdateUnitMana)
 end
 
@@ -616,7 +599,7 @@ local RangeCheckPageSize = 8
 function Healium_OnUpdate(self, elapsed)
 	if not Healium then return end
 	RangeCheckTimer = RangeCheckTimer + elapsed
-	if RangeCheckTimer < 0.5 then return end
+	if RangeCheckTimer < 0.15 then return end
 	RangeCheckTimer = 0
 
 	local Profile = Healium_GetProfile()
@@ -650,3 +633,8 @@ function Healium_OnUpdate(self, elapsed)
 	end
 	RangeCheckPageIdx = last
 end
+
+local coreFrame = CreateFrame("Frame", "HealiumCoreFrame")
+coreFrame:SetScript("OnEvent", Healium_OnEvent)
+coreFrame:SetScript("OnUpdate", Healium_OnUpdate)
+Healium_OnLoad(coreFrame)
